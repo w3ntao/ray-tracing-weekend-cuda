@@ -4,19 +4,17 @@
 // limited version of checkCudaErrors from helper_cuda.h in CUDA examples
 #define checkCudaErrors(val) check_cuda((val), #val, __FILE__, __LINE__)
 
-void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line)
-{
-    if (result)
-    {
-        std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " at " << file << ":" << line << " '" << func << "' \n";
+void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
+    if (result) {
+        std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " at " << file << ":" << line
+                  << " '" << func << "' \n";
         // Make sure we call CUDA Device Reset before exiting
         cudaDeviceReset();
         exit(99);
     }
 }
 
-__global__ void render(float *fb, int max_x, int max_y)
-{
+__global__ void render(float *fb, int max_x, int max_y) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     int j = threadIdx.y + blockIdx.y * blockDim.y;
     if ((i >= max_x) || (j >= max_y))
@@ -27,8 +25,7 @@ __global__ void render(float *fb, int max_x, int max_y)
     fb[pixel_index + 2] = 0.2;
 }
 
-int main()
-{
+int main() {
     int nx = 1200;
     int ny = 600;
     int tx = 16;
@@ -57,12 +54,9 @@ int main()
     std::cerr << "took " << timer_seconds << " seconds.\n";
 
     // Output FB as Image
-    std::cout << "P3\n"
-              << nx << " " << ny << "\n255\n";
-    for (int j = ny - 1; j >= 0; j--)
-    {
-        for (int i = 0; i < nx; i++)
-        {
+    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    for (int j = ny - 1; j >= 0; j--) {
+        for (int i = 0; i < nx; i++) {
             size_t pixel_index = j * 3 * nx + i * 3;
             float r = fb[pixel_index + 0];
             float g = fb[pixel_index + 1];
