@@ -31,27 +31,29 @@ __global__ void render(float *fb, int max_x, int max_y) {
     fb[pixel_index + 2] = 0.2;
 }
 
-int main() {
-
-    PngWriter png(800, 600);
+void writer_to_file(const string &file_name, int nx, int ny, const float *fb) {
+    PngWriter png(nx, ny);
 
     // set some pixels....
+    for (int i = 0; i < nx; ++i) {
+        for (int j = 0; j < ny; ++j) {
 
-    for (int i = 0; i < 800; ++i)
-        for (int j = 0; j < 600; ++j)
-            png.set(i, j, i + j, i - j, j - i); // set function assumes (0,0) is bottom left
+            size_t pixel_index = j * 3 * nx + i * 3;
+            float r = fb[pixel_index + 0];
+            float g = fb[pixel_index + 1];
+            float b = fb[pixel_index + 2];
+            int ir = int(255.99 * r);
+            int ig = int(255.99 * g);
+            int ib = int(255.99 * b);
 
-    // then write...
+            png.set(i, j, ir, ig, ib); // set function assumes (0,0) is bottom left
+        }
+    }
 
-    png.write("sample.png");
+    png.write(file_name);
+}
 
-    // you can make some changes and write another...
-
-    png.set(400, 300, 0, 0, 0);
-
-    png.write("sample2.png");
-    return 0;
-
+int main() {
     int nx = 1960;
     int ny = 1080;
     int tx = 16;
@@ -67,37 +69,24 @@ int main() {
     float *fb;
     checkCudaErrors(cudaMallocManaged((void **)&fb, fb_size));
 
-    clock_t start, stop;
-    start = clock();
+    clock_t start = clock();
     // Render our buffer
     dim3 blocks(nx / tx + 1, ny / ty + 1);
     dim3 threads(tx, ty);
     render<<<blocks, threads>>>(fb, nx, ny);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
-    stop = clock();
-    double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
+
+    double timer_seconds = ((double)(clock() - start)) / CLOCKS_PER_SEC;
     std::cerr << "took " << timer_seconds << " seconds.\n";
 
-    string file_name = "output.ppm";
-    ofstream out_file;
-    out_file.open(file_name);
+    string file_name = "output.png";
 
-    // Output FB as Image
-    out_file << "P3\n" << nx << " " << ny << "\n255\n";
-    for (int j = ny - 1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
-            size_t pixel_index = j * 3 * nx + i * 3;
-            float r = fb[pixel_index + 0];
-            float g = fb[pixel_index + 1];
-            float b = fb[pixel_index + 2];
-            int ir = int(255.99 * r);
-            int ig = int(255.99 * g);
-            int ib = int(255.99 * b);
-            out_file << ir << " " << ig << " " << ib << "\n";
-        }
-    }
-    cout << "image saved to `" << file_name << "`\n";
+    writer_to_file(file_name, nx, ny, fb);
 
     checkCudaErrors(cudaFree(fb));
+
+    cout << "image saved to `" << file_name << "`\n";
+
+    return 0;
 }

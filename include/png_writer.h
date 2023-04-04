@@ -3,6 +3,7 @@
 
 #include <png.h>
 // sudo apt install -y libpng-dev
+#include <string>
 
 class PngWriter {
   private:
@@ -35,12 +36,12 @@ class PngWriter {
         buffer[(ny - j - 1) * nx + i][2] = b;
     }
 
-    void write(char *filename) {
+    void write(const std::string &filename) {
 
         // note: we completely skip any error handling treatment here for
         // simplicity.
 
-        FILE *fp = fopen(filename, "wb");
+        FILE *fp = fopen(filename.c_str(), "wb");
         if (!fp) {
             std::cout << "Warning: could not open png file: " << filename << std::endl;
             return;
