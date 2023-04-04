@@ -22,31 +22,30 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
 
 __global__ void render(float *fb, int max_x, int max_y) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int j = threadIdx.y + blockIdx.y * blockDim.y;
-    if ((i >= max_x) || (j >= max_y))
+    int k = threadIdx.y + blockIdx.y * blockDim.y;
+    if ((i >= max_x) || (k >= max_y))
         return;
-    int pixel_index = j * max_x * 3 + i * 3;
+    int pixel_index = k * max_x * 3 + i * 3;
     fb[pixel_index + 0] = float(i) / max_x;
-    fb[pixel_index + 1] = float(j) / max_y;
+    fb[pixel_index + 1] = float(k) / max_y;
     fb[pixel_index + 2] = 0.2;
 }
 
-void writer_to_file(const string &file_name, int nx, int ny, const float *fb) {
-    PngWriter png(nx, ny);
+void writer_to_file(const string &file_name, int width, int height, const float *float_buffer) {
+    PngWriter png(width, height);
+
+    float scalar = 256 - 0.0001;
 
     // set some pixels....
-    for (int i = 0; i < nx; ++i) {
-        for (int j = 0; j < ny; ++j) {
+    for (int i = 0; i < width; ++i) {
+        for (int k = 0; k < height; ++k) {
+            size_t pixel_index = k * 3 * width + i * 3;
 
-            size_t pixel_index = j * 3 * nx + i * 3;
-            float r = fb[pixel_index + 0];
-            float g = fb[pixel_index + 1];
-            float b = fb[pixel_index + 2];
-            int ir = int(255.99 * r);
-            int ig = int(255.99 * g);
-            int ib = int(255.99 * b);
+            int red = int(scalar * float_buffer[pixel_index + 0]);
+            int green = int(scalar * float_buffer[pixel_index + 1]);
+            int blue = int(scalar * float_buffer[pixel_index + 2]);
 
-            png.set(i, j, ir, ig, ib); // set function assumes (0,0) is bottom left
+            png.set(i, k, red, green, blue); // set function assumes (0,0) is bottom left
         }
     }
 
@@ -54,26 +53,23 @@ void writer_to_file(const string &file_name, int nx, int ny, const float *fb) {
 }
 
 int main() {
-    int nx = 1960;
-    int ny = 1080;
-    int tx = 16;
-    int ty = 16;
+    int width = 1960;
+    int height = 1080;
+    int thread_width = 16;
+    int thread_height = 16;
 
-    std::cerr << "Rendering a " << nx << "x" << ny << " image ";
-    std::cerr << "in " << tx << "x" << ty << " blocks.\n";
-
-    int num_pixels = nx * ny;
-    size_t fb_size = 3 * num_pixels * sizeof(float);
+    std::cerr << "Rendering a " << width << "x" << height << " image ";
+    std::cerr << "in " << thread_width << "x" << thread_height << " blocks.\n";
 
     // allocate FB
-    float *fb;
-    checkCudaErrors(cudaMallocManaged((void **)&fb, fb_size));
+    float *float_buffer;
+    checkCudaErrors(cudaMallocManaged((void **)&float_buffer, 3 * sizeof(float) * width * height));
 
     clock_t start = clock();
     // Render our buffer
-    dim3 blocks(nx / tx + 1, ny / ty + 1);
-    dim3 threads(tx, ty);
-    render<<<blocks, threads>>>(fb, nx, ny);
+    dim3 blocks(width / thread_width + 1, height / thread_height + 1);
+    dim3 threads(thread_width, thread_height);
+    render<<<blocks, threads>>>(float_buffer, width, height);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
@@ -82,9 +78,9 @@ int main() {
 
     string file_name = "output.png";
 
-    writer_to_file(file_name, nx, ny, fb);
+    writer_to_file(file_name, width, height, float_buffer);
 
-    checkCudaErrors(cudaFree(fb));
+    checkCudaErrors(cudaFree(float_buffer));
 
     cout << "image saved to `" << file_name << "`\n";
 
