@@ -1,5 +1,11 @@
-#include <iostream>
 #include <time.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include <png_writer.h>
+
+using namespace std;
 
 // limited version of checkCudaErrors from helper_cuda.h in CUDA examples
 #define checkCudaErrors(val) check_cuda((val), #val, __FILE__, __LINE__)
@@ -26,8 +32,28 @@ __global__ void render(float *fb, int max_x, int max_y) {
 }
 
 int main() {
-    int nx = 1200;
-    int ny = 600;
+
+    PngWriter png(800, 600);
+
+    // set some pixels....
+
+    for (int i = 0; i < 800; ++i)
+        for (int j = 0; j < 600; ++j)
+            png.set(i, j, i + j, i - j, j - i); // set function assumes (0,0) is bottom left
+
+    // then write...
+
+    png.write("sample.png");
+
+    // you can make some changes and write another...
+
+    png.set(400, 300, 0, 0, 0);
+
+    png.write("sample2.png");
+    return 0;
+
+    int nx = 1960;
+    int ny = 1080;
     int tx = 16;
     int ty = 16;
 
@@ -53,8 +79,12 @@ int main() {
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
     std::cerr << "took " << timer_seconds << " seconds.\n";
 
+    string file_name = "output.ppm";
+    ofstream out_file;
+    out_file.open(file_name);
+
     // Output FB as Image
-    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    out_file << "P3\n" << nx << " " << ny << "\n255\n";
     for (int j = ny - 1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             size_t pixel_index = j * 3 * nx + i * 3;
@@ -64,9 +94,10 @@ int main() {
             int ir = int(255.99 * r);
             int ig = int(255.99 * g);
             int ib = int(255.99 * b);
-            std::cout << ir << " " << ig << " " << ib << "\n";
+            out_file << ir << " " << ig << " " << ib << "\n";
         }
     }
+    cout << "image saved to `" << file_name << "`\n";
 
     checkCudaErrors(cudaFree(fb));
 }
