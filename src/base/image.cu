@@ -1,18 +1,9 @@
 #include "image.cuh"
 #include <vector>
-
-#ifdef GDIPLUS_SUPPORT
-#include <windows.h>
-#include <process.h>
-#include <gdiplus.h>
-#else
-
 #include <png.h>
 #include <cstdlib>
 #include <cstdarg>
 #include <cstring>
-
-#endif
 
 Image::Image(uint width, uint height) : width_(width), height_(height) {
     pixels = new RGBColor[width * height];
@@ -66,44 +57,6 @@ void Image::clear(const RGBColor &color) {
         pixels[i] = color;
 }
 
-#ifdef GDIPLUS_SUPPORT
-int GetEncoderClsid(const WCHAR *format, CLSID *pClsid) {
-    using namespace Gdiplus;
-
-    UINT num = 0;  // number of Image encoders
-    UINT size = 0; // size of the Image encoder array in bytes
-
-    ImageCodecInfo *pImageCodecInfo = NULL;
-
-    GetImageEncodersSize(&num, &size);
-    if (size == 0)
-        return -1; // Failure
-
-    pImageCodecInfo = (ImageCodecInfo *)(malloc(size));
-    if (pImageCodecInfo == NULL)
-        return -1; // Failure
-
-    GetImageEncoders(num, size, pImageCodecInfo);
-
-    for (UINT j = 0; j < num; ++j) {
-        if (wcscmp(pImageCodecInfo[j].MimeType, format) == 0) {
-            *pClsid = pImageCodecInfo[j].Clsid;
-            free(pImageCodecInfo);
-            return j; // Success
-        }
-    }
-
-    free(pImageCodecInfo);
-    return -1; // Failure
-}
-
-#undef pMin
-#undef pMax
-
-#endif
-
-#ifndef GDIPLUS_SUPPORT
-
 void abort_(const char *s, ...) {
     va_list args;
     va_start(args, s);
@@ -113,49 +66,7 @@ void abort_(const char *s, ...) {
     abort();
 }
 
-#endif
-
 void Image::writePNG(const std::string &_fileName) {
-
-#ifdef GDIPLUS_SUPPORT
-    using namespace Gdiplus;
-
-    // Initialize GDI+.
-    GdiplusStartupInput gdiplusStartupInput;
-    ULONG_PTR gdiplusToken;
-    GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
-
-    CLSID encoderClsid;
-    Status stat;
-
-    Bitmap *Image = new Bitmap(width_, height_, PixelFormat24bppRGB);
-    BitmapData data;
-    Rect r(0, 0, width_, height_);
-    Image->LockBits(&r, ImageLockModeWrite, PixelFormat24bppRGB, &data);
-
-    RGBColor *it = pixels;
-    for (uint y = 0; y < height_; y++) {
-        byte *ptr = (byte *)data.Scan0 + data.Stride * y;
-        for (uint x = 0; x < width_; x++) {
-            RGBColor v = (*it++).clamp();
-            *ptr++ = (byte)(v.b * 255);
-            *ptr++ = (byte)(v.g * 255);
-            *ptr++ = (byte)(v.r * 255);
-        }
-    }
-
-    Image->UnlockBits(&data);
-
-    // Get the CLSID of the PNG encoder.
-    GetEncoderClsid(L"image/png", &encoderClsid);
-
-    std::wstring name(_fileName.begin(), _fileName.end());
-    stat = Image->Save(name.c_str(), &encoderClsid, NULL);
-
-    delete Image;
-    GdiplusShutdown(gdiplusToken);
-#else
-
     std::vector<png_byte> byteData(width_ * height_ * 3);
     std::vector<png_byte>::iterator ptr = byteData.begin();
     for (size_t i = 0; i < width_ * height_; ++i) {
@@ -213,42 +124,9 @@ void Image::writePNG(const std::string &_fileName) {
     png_write_end(png_ptr, NULL);
 
     fclose(fp);
-#endif
 }
 
 void Image::readPNG(const std::string &filename) {
-#ifdef GDIPLUS_SUPPORT
-    using namespace Gdiplus;
-
-    // Initialize GDI+.
-    GdiplusStartupInput gdiplusStartupInput;
-    ULONG_PTR gdiplusToken;
-    GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
-
-    std::wstring name(filename.begin(), filename.end());
-    Bitmap *bmp = new Bitmap(name.c_str(), FALSE);
-    create(bmp->GetWidth(), bmp->GetHeight());
-
-    BitmapData data;
-    Rect r(0, 0, width_, height_);
-    bmp->LockBits(&r, ImageLockModeWrite, PixelFormat24bppRGB, &data);
-
-    RGBColor *it = pixels;
-    for (uint y = 0; y < height_; y++) {
-        byte *ptr = (byte *)data.Scan0 + data.Stride * y;
-        for (uint x = 0; x < width_; x++) {
-            RGBColor &v = *it++;
-            v.b = (float)(*ptr++) / 255.f;
-            v.g = (float)(*ptr++) / 255.f;
-            v.r = (float)(*ptr++) / 255.f;
-        }
-    }
-
-    bmp->UnlockBits(&data);
-    delete bmp;
-
-    GdiplusShutdown(gdiplusToken);
-#else
     png_byte header[8]; // 8 is the maximum size that can be checked
 
     /* open file and test for it being a png */
@@ -308,7 +186,6 @@ void Image::readPNG(const std::string &filename) {
                 b++;
         }
     }
-#endif
 }
 
 Image &Image::operator=(const Image &other) {
