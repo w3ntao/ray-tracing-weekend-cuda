@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "png_writer.cuh"
+#include "image.cuh"
 
 using namespace std;
 

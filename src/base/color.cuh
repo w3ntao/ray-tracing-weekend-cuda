@@ -31,10 +31,6 @@ class RGBColor {
 
     RGBColor clamp() const;
 
-    RGBColor gamma(float gam) const;
-
-    float luminance() const;
-
   private:
     inline float single_clamp(float x) const {
         return x < 0 ? 0 : (x > 1 ? 1 : x);
