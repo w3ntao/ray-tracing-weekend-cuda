@@ -17,27 +17,19 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
     }
 }
 
-__global__ void render(RGBColor *o_frame_buffer, int width, int height) {
+//__global__ void render(RGBColor *o_frame_buffer, int width, int height) {
+__global__ void render(RGBColor *frame_buffer, int width, int height) {
     int pixel_x = threadIdx.x + blockIdx.x * blockDim.x;
     int pixel_y = threadIdx.y + blockIdx.y * blockDim.y;
     if ((pixel_x >= width) || (pixel_y >= height)) {
         return;
     }
     int pixel_index = pixel_y * width + pixel_x;
-    o_frame_buffer[pixel_index] = RGBColor(float(pixel_x) / width, float(pixel_y) / height, 0.2);
+    frame_buffer[pixel_index] = RGBColor(float(pixel_x) / width, float(pixel_y) / height, 0.2);
 }
 
-void writer_to_file(const string &file_name, int width, int height, const RGBColor *float_buffer) {
-    Image image(width, height);
-
-    // set some pixels....
-    for (int x = 0; x < width; ++x) {
-        for (int y = 0; y < height; ++y) {
-            size_t pixel_index = y * width + x;
-            image(x, y) = float_buffer[pixel_index];
-        }
-    }
-
+void writer_to_file(const string &file_name, int width, int height, const RGBColor *frame_buffer) {
+    Image image(frame_buffer, width, height);
     image.writePNG(file_name);
 }
 
@@ -56,9 +48,11 @@ int main() {
 
     clock_t start = clock();
     // Render our buffer
-    dim3 blocks(width / thread_width + 1, height / thread_height + 1);
-    dim3 threads(thread_width, thread_height);
+    dim3 blocks(width / thread_width + 1, height / thread_height + 1, 1);
+    dim3 threads(thread_width, thread_height, 1);
+
     render<<<blocks, threads>>>(frame_buffer, width, height);
+
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
