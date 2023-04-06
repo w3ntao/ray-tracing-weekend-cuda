@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include "image.cuh"
+#include "base/vector3.cuh"
+#include "base/point3.cuh"
 
 using namespace std;
 
