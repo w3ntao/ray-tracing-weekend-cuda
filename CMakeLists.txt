@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
-# needed by CLion
+# required by CLion
 
-project(ray_tracing LANGUAGES CUDA)
+project(cuda_ray_tracer LANGUAGES CUDA)
 
 find_package(PNG QUIET)
 if (PNG_FOUND)
@@ -17,11 +17,9 @@ endif ()
 
 include_directories(include)
 
-set(EXEC_PROGRAM "ray_tracing")
+set(EXEC_PROGRAM "cudart")
 
 add_executable(${EXEC_PROGRAM}
-    main.cu
-    include/png_writer.h
-)
+    main.cu)
 
 target_link_libraries(${EXEC_PROGRAM} ${PNG_LIBRARY})

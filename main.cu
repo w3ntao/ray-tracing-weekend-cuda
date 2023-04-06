@@ -1,8 +1,5 @@
-#include <time.h>
 #include <iostream>
-#include <fstream>
 #include <string>
-
 #include <png_writer.h>
 
 using namespace std;
@@ -20,15 +17,16 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
     }
 }
 
-__global__ void render(float *fb, int max_x, int max_y) {
-    int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int k = threadIdx.y + blockIdx.y * blockDim.y;
-    if ((i >= max_x) || (k >= max_y))
+__global__ void render(float *o_frame_buffer, int width, int height) {
+    int pixel_x = threadIdx.x + blockIdx.x * blockDim.x;
+    int pixel_y = threadIdx.y + blockIdx.y * blockDim.y;
+    if ((pixel_x >= width) || (pixel_y >= height)) {
         return;
-    int pixel_index = k * max_x * 3 + i * 3;
-    fb[pixel_index + 0] = float(i) / max_x;
-    fb[pixel_index + 1] = float(k) / max_y;
-    fb[pixel_index + 2] = 0.2;
+    }
+    int pixel_index = pixel_y * width * 3 + pixel_x * 3;
+    o_frame_buffer[pixel_index + 0] = float(pixel_x) / width;
+    o_frame_buffer[pixel_index + 1] = float(pixel_y) / height;
+    o_frame_buffer[pixel_index + 2] = 0.2;
 }
 
 void writer_to_file(const string &file_name, int width, int height, const float *float_buffer) {
@@ -55,21 +53,21 @@ void writer_to_file(const string &file_name, int width, int height, const float 
 int main() {
     int width = 1960;
     int height = 1080;
-    int thread_width = 16;
-    int thread_height = 16;
+    int thread_width = 8;
+    int thread_height = 8;
 
     std::cerr << "Rendering a " << width << "x" << height << " image ";
     std::cerr << "in " << thread_width << "x" << thread_height << " blocks.\n";
 
     // allocate FB
-    float *float_buffer;
-    checkCudaErrors(cudaMallocManaged((void **)&float_buffer, 3 * sizeof(float) * width * height));
+    float *frame_buffer;
+    checkCudaErrors(cudaMallocManaged((void **)&frame_buffer, 3 * sizeof(float) * width * height));
 
     clock_t start = clock();
     // Render our buffer
     dim3 blocks(width / thread_width + 1, height / thread_height + 1);
     dim3 threads(thread_width, thread_height);
-    render<<<blocks, threads>>>(float_buffer, width, height);
+    render<<<blocks, threads>>>(frame_buffer, width, height);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
@@ -78,9 +76,9 @@ int main() {
 
     string file_name = "output.png";
 
-    writer_to_file(file_name, width, height, float_buffer);
+    writer_to_file(file_name, width, height, frame_buffer);
 
-    checkCudaErrors(cudaFree(float_buffer));
+    checkCudaErrors(cudaFree(frame_buffer));
 
     cout << "image saved to `" << file_name << "`\n";
 
