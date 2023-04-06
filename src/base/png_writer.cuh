@@ -12,7 +12,6 @@ class PngWriter {
 
   public:
     PngWriter(const int width, const int height) {
-
         nx = width;
         ny = height;
         buffer = new unsigned char[nx * ny][3];
@@ -26,7 +25,9 @@ class PngWriter {
         }
     }
 
-    ~PngWriter() { delete[] buffer; }
+    ~PngWriter() {
+        delete[] buffer;
+    }
 
     void set(const int i, const int j, const unsigned char r, const unsigned char g, const unsigned char b) {
         // recall that for png files, the pixels are ordered from the top left, so

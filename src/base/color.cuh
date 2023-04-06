@@ -13,7 +13,9 @@ class RGBColor {
 
     RGBColor(float r, float g, float b) : r(r), g(g), b(b) {}
 
-    static RGBColor rep(float v) { return RGBColor(v, v, v); }
+    static RGBColor rep(float v) {
+        return RGBColor(v, v, v);
+    }
 
     RGBColor operator+(const RGBColor &c) const;
 
@@ -34,7 +36,9 @@ class RGBColor {
     float luminance() const;
 
   private:
-    inline float single_clamp(float x) const { return x < 0 ? 0 : (x > 1 ? 1 : x); }
+    inline float single_clamp(float x) const {
+        return x < 0 ? 0 : (x > 1 ? 1 : x);
+    }
 };
 
 RGBColor operator*(float scalar, const RGBColor &b);
