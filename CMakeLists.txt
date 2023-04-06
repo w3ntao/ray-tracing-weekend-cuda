@@ -21,7 +21,9 @@ add_executable(${EXEC_PROGRAM}
         src/main.cu
         src/base/color.cu
         src/base/color.cuh
-        src/base/image.cu src/base/image.cuh src/base/util.h)
+        src/base/image.cu
+        src/base/image.cuh
+        src/base/util.h)
 
 target_include_directories(${EXEC_PROGRAM} PRIVATE "src/base")
 target_link_libraries(${EXEC_PROGRAM} PRIVATE ${PNG_LIBRARY})
