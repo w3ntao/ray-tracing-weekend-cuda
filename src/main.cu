@@ -31,24 +31,18 @@ __global__ void render(float *o_frame_buffer, int width, int height) {
 }
 
 void writer_to_file(const string &file_name, int width, int height, const float *float_buffer) {
-    PngWriter png(width, height);
-
-    float scalar = 256 - 0.0001;
+    Image image(width, height);
 
     // set some pixels....
-    for (int i = 0; i < width; ++i) {
-        for (int k = 0; k < height; ++k) {
-            size_t pixel_index = k * 3 * width + i * 3;
-
-            int red = int(scalar * float_buffer[pixel_index + 0]);
-            int green = int(scalar * float_buffer[pixel_index + 1]);
-            int blue = int(scalar * float_buffer[pixel_index + 2]);
-
-            png.set(i, k, red, green, blue); // set function assumes (0,0) is bottom left
+    for (int x = 0; x < width; ++x) {
+        for (int y = 0; y < height; ++y) {
+            size_t pixel_index = y * 3 * width + x * 3;
+            image(x, y) = RGBColor(float_buffer[pixel_index + 0], float_buffer[pixel_index + 1],
+                                   float_buffer[pixel_index + 2]);
         }
     }
 
-    png.write(file_name);
+    image.writePNG(file_name);
 }
 
 int main() {
