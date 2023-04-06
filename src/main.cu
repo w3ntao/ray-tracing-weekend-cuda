@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include <png_writer.h>
+#include "png_writer.h"
 
 using namespace std;
 

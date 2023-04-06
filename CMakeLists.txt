@@ -5,6 +5,8 @@ set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
 
 project(cuda_ray_tracer LANGUAGES CUDA)
 
+set(EXEC_PROGRAM "cudart")
+
 find_package(PNG QUIET)
 if (PNG_FOUND)
     include_directories(${PNG_INCLUDE_DIRS})
@@ -15,11 +17,8 @@ else ()
     message(FATAL_ERROR "libpng-dev is required to build the project.\nPlease install libpng-dev.")
 endif ()
 
-include_directories(include)
-
-set(EXEC_PROGRAM "cudart")
-
 add_executable(${EXEC_PROGRAM}
-    main.cu)
+        src/main.cu)
 
-target_link_libraries(${EXEC_PROGRAM} ${PNG_LIBRARY})
+target_include_directories(${EXEC_PROGRAM} PRIVATE "src/base")
+target_link_libraries(${EXEC_PROGRAM} PRIVATE ${PNG_LIBRARY})
