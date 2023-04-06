@@ -5,49 +5,49 @@
 #ifndef CUDA_RAY_TRACER_COLOR_CUH
 #define CUDA_RAY_TRACER_COLOR_CUH
 
-class RGBColor {
+class Color {
   public:
     float r, g, b;
 
-    __host__ __device__ RGBColor() : r(0.0), g(0.0), b(0.0) {}
+    __host__ __device__ Color() : r(0.0), g(0.0), b(0.0) {}
 
-    __host__ __device__ RGBColor(float r, float g, float b) : r(r), g(g), b(b) {}
+    __host__ __device__ Color(float r, float g, float b) : r(r), g(g), b(b) {}
 
-    __host__ __device__ RGBColor operator+(const RGBColor &c) const {
-        return RGBColor(r + c.r, g + c.g, b + c.b);
+    __device__ Color operator+(const Color &c) const {
+        return Color(r + c.r, g + c.g, b + c.b);
     }
 
-    __host__ __device__ void operator+=(const RGBColor &c) {
+    __device__ void operator+=(const Color &c) {
         r += c.r;
         g += c.g;
         b += c.b;
     }
 
-    __host__ __device__ RGBColor operator-(const RGBColor &c) const {
-        return RGBColor(r - c.r, g - c.g, b - c.b);
+    __device__ Color operator-(const Color &c) const {
+        return Color(r - c.r, g - c.g, b - c.b);
     }
 
-    __host__ __device__ RGBColor operator*(const RGBColor &c) const {
-        return RGBColor(r * c.r, g * c.g, b * c.b);
+    __device__ Color operator*(const Color &c) const {
+        return Color(r * c.r, g * c.g, b * c.b);
     }
 
-    __host__ __device__ RGBColor operator*(float scalar) const {
-        return RGBColor(r * scalar, g * scalar, b * scalar);
+    __device__ Color operator*(float scalar) const {
+        return Color(r * scalar, g * scalar, b * scalar);
     }
 
-    __host__ __device__ RGBColor operator/(float divisor) const {
-        return RGBColor(r / divisor, g / divisor, b / divisor);
+    __device__ Color operator/(float divisor) const {
+        return Color(r / divisor, g / divisor, b / divisor);
     }
 
-    __host__ __device__ bool operator==(const RGBColor &c) const {
+    __device__ bool operator==(const Color &c) const {
         return r == c.r && g == c.g && b == c.b;
     }
-    __host__ __device__ bool operator!=(const RGBColor &c) const {
+    __device__ bool operator!=(const Color &c) const {
         return !(*this == c);
     }
 
-    __host__ __device__ RGBColor clamp() const {
-        return RGBColor(single_clamp(r), single_clamp(g), single_clamp(b));
+    __host__ __device__ Color clamp() const {
+        return Color(single_clamp(r), single_clamp(g), single_clamp(b));
     }
 
   private:

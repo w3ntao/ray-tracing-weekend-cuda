@@ -18,17 +18,17 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
 }
 
 //__global__ void render(RGBColor *o_frame_buffer, int width, int height) {
-__global__ void render(RGBColor *frame_buffer, int width, int height) {
+__global__ void render(Color *frame_buffer, int width, int height) {
     int pixel_x = threadIdx.x + blockIdx.x * blockDim.x;
     int pixel_y = threadIdx.y + blockIdx.y * blockDim.y;
     if ((pixel_x >= width) || (pixel_y >= height)) {
         return;
     }
     int pixel_index = pixel_y * width + pixel_x;
-    frame_buffer[pixel_index] = RGBColor(float(pixel_x) / width, float(pixel_y) / height, 0.2);
+    frame_buffer[pixel_index] = Color(float(pixel_x) / width, float(pixel_y) / height, 0.2);
 }
 
-void writer_to_file(const string &file_name, int width, int height, const RGBColor *frame_buffer) {
+void writer_to_file(const string &file_name, int width, int height, const Color *frame_buffer) {
     Image image(frame_buffer, width, height);
     image.writePNG(file_name);
 }
@@ -43,8 +43,8 @@ int main() {
     std::cerr << "in " << thread_width << "x" << thread_height << " blocks.\n";
 
     // allocate FB
-    RGBColor *frame_buffer;
-    checkCudaErrors(cudaMallocManaged((void **)&frame_buffer, 3 * sizeof(RGBColor) * width * height));
+    Color *frame_buffer;
+    checkCudaErrors(cudaMallocManaged((void **)&frame_buffer, 3 * sizeof(Color) * width * height));
 
     clock_t start = clock();
     // Render our buffer
