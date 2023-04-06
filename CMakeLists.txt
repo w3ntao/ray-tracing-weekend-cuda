@@ -19,7 +19,6 @@ endif ()
 
 add_executable(${EXEC_PROGRAM}
         src/main.cu
-        src/base/color.cu
         src/base/color.cuh
         src/base/image.cu
         src/base/image.cuh

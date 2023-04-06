@@ -9,38 +9,51 @@ class RGBColor {
   public:
     float r, g, b;
 
-    RGBColor() {}
+    __host__ __device__ RGBColor() : r(0.0), g(0.0), b(0.0) {}
 
-    RGBColor(float r, float g, float b) : r(r), g(g), b(b) {}
+    __host__ __device__ RGBColor(float r, float g, float b) : r(r), g(g), b(b) {}
 
-    static RGBColor rep(float v) {
-        return RGBColor(v, v, v);
+    __host__ __device__ RGBColor operator+(const RGBColor &c) const {
+        return RGBColor(r + c.r, g + c.g, b + c.b);
     }
 
-    RGBColor operator+(const RGBColor &c) const;
+    __host__ __device__ void operator+=(const RGBColor &c) {
+        r += c.r;
+        g += c.g;
+        b += c.b;
+    }
 
-    void operator+=(const RGBColor &c);
+    __host__ __device__ RGBColor operator-(const RGBColor &c) const {
+        return RGBColor(r - c.r, g - c.g, b - c.b);
+    }
 
-    RGBColor operator-(const RGBColor &c) const;
+    __host__ __device__ RGBColor operator*(const RGBColor &c) const {
+        return RGBColor(r * c.r, g * c.g, b * c.b);
+    }
 
-    RGBColor operator*(const RGBColor &c) const;
+    __host__ __device__ RGBColor operator*(float scalar) const {
+        return RGBColor(r * scalar, g * scalar, b * scalar);
+    }
 
-    bool operator==(const RGBColor &b) const;
+    __host__ __device__ RGBColor operator/(float divisor) const {
+        return RGBColor(r / divisor, g / divisor, b / divisor);
+    }
 
-    bool operator!=(const RGBColor &b) const;
+    __host__ __device__ bool operator==(const RGBColor &c) const {
+        return r == c.r && g == c.g && b == c.b;
+    }
+    __host__ __device__ bool operator!=(const RGBColor &c) const {
+        return !(*this == c);
+    }
 
-    RGBColor clamp() const;
+    __host__ __device__ RGBColor clamp() const {
+        return RGBColor(single_clamp(r), single_clamp(g), single_clamp(b));
+    }
 
   private:
-    inline float single_clamp(float x) const {
+    __host__ __device__ inline float single_clamp(float x) const {
         return x < 0 ? 0 : (x > 1 ? 1 : x);
     }
 };
-
-RGBColor operator*(float scalar, const RGBColor &b);
-
-RGBColor operator*(const RGBColor &a, float scalar);
-
-RGBColor operator/(const RGBColor &a, float scalar);
 
 #endif // CUDA_RAY_TRACER_COLOR_CUH
