@@ -10,51 +10,81 @@ using namespace std;
 // limited version of checkCudaErrors from helper_cuda.h in CUDA examples
 #define checkCudaErrors(val) check_cuda((val), #val, __FILE__, __LINE__)
 
-void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
+void check_cuda(cudaError_t result, char const *const func, const char *const file,
+                int const line) {
     if (result) {
-        std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " at " << file << ":" << line
-                  << " '" << func << "' \n";
+        std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " at "
+                  << file << ":" << line << " '" << func << "' \n";
         // Make sure we call CUDA Device Reset before exiting
         cudaDeviceReset();
         exit(99);
     }
 }
 
-//__global__ void render(RGBColor *o_frame_buffer, int width, int height) {
-__global__ void render(Color *frame_buffer, int width, int height) {
-    int pixel_x = threadIdx.x + blockIdx.x * blockDim.x;
-    int pixel_y = threadIdx.y + blockIdx.y * blockDim.y;
-    if ((pixel_x >= width) || (pixel_y >= height)) {
-        return;
-    }
-    int pixel_index = pixel_y * width + pixel_x;
-    frame_buffer[pixel_index] = Color(float(pixel_x) / width, float(pixel_y) / height, 0.2);
+__device__ bool hit_sphere(const Point3 &center, float radius, const Ray &r) {
+    Vector3 oc = r.o - center;
+    float a = dot(r.d, r.d);
+    float b = 2.0f * dot(oc, r.d);
+    float c = dot(oc, oc) - radius * radius;
+    float discriminant = b * b - 4.0f * a * c;
+    return (discriminant > 0.0f);
 }
 
-void writer_to_file(const string &file_name, int width, int height, const Color *frame_buffer) {
+__device__ Color color(const Ray &r) {
+    if (hit_sphere(Point3(0, 0, -1), 0.5, r)) {
+        return Color(1, 0, 0);
+    }
+
+    Vector3 unit_direction = r.d.normalize();
+    float t = 0.5f * (unit_direction.y + 1.0f);
+    auto result = (1.0f - t) * Vector3(1.0, 1.0, 1.0) + t * Vector3(0.5, 0.7, 1.0);
+
+    return Color(result.x, result.y, result.z);
+}
+
+__global__ void render(Color *frame_buffer, int width, int height,
+                       Point3 lower_left_corner, Vector3 horizontal, Vector3 vertical,
+                       Point3 origin) {
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+    if ((x >= width) || (y >= height)) {
+        return;
+    }
+
+    float u = float(x) / float(width);
+    float v = float(y) / float(height);
+
+    Ray ray(origin, (lower_left_corner + u * horizontal + v * vertical).to_vector());
+    frame_buffer[y * width + x] = color(ray);
+}
+
+void writer_to_file(const string &file_name, int width, int height,
+                    const Color *frame_buffer) {
     Image image(frame_buffer, width, height);
     image.writePNG(file_name);
 }
 
 int main() {
-    int width = 1960;
-    int height = 1080;
+    int width = 1600;
+    int height = 800;
     int thread_width = 8;
     int thread_height = 8;
-
     std::cerr << "Rendering a " << width << "x" << height << " image ";
     std::cerr << "in " << thread_width << "x" << thread_height << " blocks.\n";
 
     // allocate FB
     Color *frame_buffer;
-    checkCudaErrors(cudaMallocManaged((void **)&frame_buffer, 3 * sizeof(Color) * width * height));
+    checkCudaErrors(
+        cudaMallocManaged((void **)&frame_buffer, sizeof(Color) * width * height));
 
     clock_t start = clock();
     // Render our buffer
     dim3 blocks(width / thread_width + 1, height / thread_height + 1, 1);
     dim3 threads(thread_width, thread_height, 1);
 
-    render<<<blocks, threads>>>(frame_buffer, width, height);
+    render<<<blocks, threads>>>(frame_buffer, width, height, Point3(-2.0, -1.0, -1.0),
+                                Vector3(4.0, 0.0, 0.0), Vector3(0.0, 2.0, 0.0),
+                                Point3(0.0, 0.0, 0.0));
 
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());

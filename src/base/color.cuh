@@ -39,13 +39,6 @@ class Color {
         return Color(r / divisor, g / divisor, b / divisor);
     }
 
-    __device__ bool operator==(const Color &c) const {
-        return r == c.r && g == c.g && b == c.b;
-    }
-    __device__ bool operator!=(const Color &c) const {
-        return !(*this == c);
-    }
-
     __host__ __device__ Color clamp() const {
         return Color(single_clamp(r), single_clamp(g), single_clamp(b));
     }

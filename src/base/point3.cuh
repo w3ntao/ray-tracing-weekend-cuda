@@ -12,10 +12,6 @@ class Point3 {
 
     __host__ __device__ Point3(float _x, float _y, float _z) : x(_x), y(_y), z(_z){};
 
-    __host__ __device__ Point3 operator+(const Vector3 &v) const {
-        return Point3(x + v.x, y + v.y, z + v.z);
-    }
-
     __host__ __device__ float &operator[](int index) {
         if (index == 0) {
             return x;
@@ -48,6 +44,18 @@ class Point3 {
 #else
         throw std::runtime_error("Point3: invalid index `" + std::to_string(index) + "`");
 #endif
+    }
+
+    __host__ __device__ Point3 operator+(const Vector3 &v) const {
+        return Point3(x + v.x, y + v.y, z + v.z);
+    }
+
+    __host__ __device__ Vector3 operator-(const Point3 &p) const {
+        return Vector3(x - p.x, y - p.y, z - p.z);
+    }
+
+    __host__ __device__ Vector3 to_vector() const {
+        return Vector3(x, y, z);
     }
 };
 

@@ -35,12 +35,8 @@ class Vector3 {
         return Vector3(x / divisor, y / divisor, z / divisor);
     }
 
-    __host__ __device__ float dot(const Vector3 &v) const {
-        return x * v.x + y * v.y + z * v.z;
-    }
-
     __host__ __device__ float length() const {
-        return std::sqrt(this->dot(*this));
+        return std::sqrt(x * x + y * y + z * z);
     }
 
     __host__ __device__ Vector3 normalize() const {
@@ -83,6 +79,10 @@ class Vector3 {
 };
 __host__ __device__ Vector3 operator*(float factor, const Vector3 &v) {
     return v * factor;
+}
+
+__host__ __device__ float dot(const Vector3 &left, const Vector3 &right) {
+    return left.x * right.x + left.y * right.y + left.z * right.z;
 }
 
 #endif // CUDA_RAY_TRACER_VECTOR3_CUH
