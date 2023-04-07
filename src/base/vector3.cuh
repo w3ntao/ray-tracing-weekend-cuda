@@ -13,23 +13,35 @@ class Vector3 {
 
     Vector3() : x(0), y(0), z(0){};
 
-    Vector3(float x, float y, float z);
+    Vector3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 
-    Vector3 operator+(const Vector3 &b) const;
+    Vector3 operator+(const Vector3 &b) const {
+        return Vector3(x + b.x, y + b.y, z + b.z);
+    }
 
-    Vector3 operator-(const Vector3 &b) const;
+    Vector3 operator-(const Vector3 &b) const {
+        return Vector3(x - b.x, y - b.y, z - b.z);
+    }
 
-    Vector3 operator-() const;
+    Vector3 operator-() const {
+        return Vector3(-x, -y, -z);
+    }
 
-    Vector3 normalize() const;
+    Vector3 operator/(float divisor) const {
+        return Vector3(x / divisor, y / divisor, z / divisor);
+    }
 
-    float LengthSquared() const;
+    float dot(const Vector3 &v) const {
+        return x * v.x + y * v.y + z * v.z;
+    }
 
-    float length() const;
+    float length() const {
+        return std::sqrt(this->dot(*this));
+    }
 
-    bool operator==(const Vector3 &b) const;
-
-    bool operator!=(const Vector3 &b) const;
+    Vector3 normalize() const {
+        return *this / length();
+    }
 
     float &operator[](int index) {
         if (index == 0) {
@@ -56,58 +68,6 @@ class Vector3 {
         }
         throw std::runtime_error("Vector3: invalid index `" + std::to_string(index) + "`");
     }
-
-    int max_axis() const {
-        if (x > std::max(y, z)) {
-            return 0;
-        } else if (y > z) {
-            return 1;
-        } else {
-            return 2;
-        }
-    }
 };
-
-Vector3 operator*(float scalar, const Vector3 &b);
-
-Vector3 operator*(const Vector3 &a, float scalar);
-
-Vector3 operator/(const Vector3 &a, float scalar);
-
-Vector3 cross(const Vector3 &a, const Vector3 &b);
-
-float Dot(const Vector3 &a, const Vector3 &b);
-
-float vector_cosine(const Vector3 &a, const Vector3 &b);
-
-Vector3 min(const Vector3 &a, const Vector3 &b);
-
-Vector3 max(const Vector3 &a, const Vector3 &b);
-
-/*
-Point3 operator+(const Point3 &a, const Vector3 &b);
-
-Point3 operator+(const Vector3 &a, const Point3 &b);
-
-Point3 operator-(const Point3 &a, const Vector3 &b);
-
-Point3 operator*(const Float4 &scale, const Point3 &p);
-*/
-
-static int MaxDimension(const Vector3 &v) {
-    return (v.x > v.y) ? ((v.x > v.z) ? 0 : 2) : ((v.y > v.z) ? 1 : 2);
-}
-
-static float MaxComponent(const Vector3 &v) {
-    return std::max(v.x, std::max(v.y, v.z));
-}
-
-static Vector3 Permute(const Vector3 &v, int x, int y, int z) {
-    return {v[x], v[y], v[z]};
-}
-
-static Vector3 Abs(const Vector3 &v) {
-    return Vector3(std::abs(v.x), std::abs(v.y), std::abs(v.z));
-}
 
 #endif // CUDA_RAY_TRACER_VECTOR3_CUH

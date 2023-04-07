@@ -25,9 +25,7 @@ add_executable(${EXEC_PROGRAM}
         src/base/util.h
         src/base/ray.cuh
         src/base/vector3.cuh
-        src/base/vector3.cu
         src/base/point3.cuh
-        src/base/point3.cu
         )
 
 target_include_directories(${EXEC_PROGRAM} PRIVATE "src/base")
