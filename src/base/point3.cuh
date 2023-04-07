@@ -9,11 +9,11 @@ class Point3 {
   public:
     float x, y, z;
 
-    Point3() : x(0.0), y(0.0), z(0.0){};
+    __host__ __device__ Point3() : x(0.0), y(0.0), z(0.0){};
 
-    Point3(float _x, float _y, float _z) : x(_x), y(_y), z(_z){};
+    __host__ __device__ Point3(float _x, float _y, float _z) : x(_x), y(_y), z(_z){};
 
-    float &operator[](int index) {
+    __host__ __device__ float &operator[](int index) {
         if (index == 0) {
             return x;
         }
@@ -23,10 +23,14 @@ class Point3 {
         if (index == 2) {
             return z;
         }
+#if defined(__CUDA_ARCH__)
+        asm("trap;");
+#else
         throw std::runtime_error("Point3: invalid index `" + std::to_string(index) + "`");
+#endif
     }
 
-    float operator[](int index) const {
+    __host__ __device__ float operator[](int index) const {
         if (index == 0) {
             return x;
         }
@@ -36,7 +40,11 @@ class Point3 {
         if (index == 2) {
             return z;
         }
+#if defined(__CUDA_ARCH__)
+        asm("trap;");
+#else
         throw std::runtime_error("Point3: invalid index `" + std::to_string(index) + "`");
+#endif
     }
 };
 
