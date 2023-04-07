@@ -29,7 +29,9 @@ add_executable(${EXEC_PROGRAM}
         src/base/vector3.cuh
         src/base/point3.cuh
         src/base/shape.h
-        src/base/sphere.h)
+        src/base/sphere.h
+        src/base/world.h
+        )
 
 target_include_directories(${EXEC_PROGRAM} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(${EXEC_PROGRAM} PRIVATE ${PNG_LIBRARY})

@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
+#include <cfloat>
 #include "base/image.cuh"
 #include "base/sphere.h"
+#include "base/world.h"
 
 using namespace std;
 
@@ -28,9 +30,13 @@ __device__ bool hit_sphere(const Point3 &center, float radius, const Ray &r) {
     return (discriminant > 0.0f);
 }
 
-__device__ Color color(const Ray &r) {
-    if (hit_sphere(Point3(0, 0, -1), 0.5, r)) {
-        return Color(1, 0, 0);
+__device__ Color color(const Ray &r, World **world) {
+    Intersection intersection;
+    if ((*world)->intersect(intersection, r, 0.0, FLT_MAX)) {
+        auto result = 0.5f * Vector3(intersection.n.x + 1.0f, intersection.n.y + 1.0f,
+                                     intersection.n.z + 1.0f);
+        result = result.normalize();
+        return Color(result.x, result.y, result.z);
     }
 
     Vector3 unit_direction = r.d.normalize();
@@ -42,9 +48,9 @@ __device__ Color color(const Ray &r) {
 
 __global__ void render(Color *frame_buffer, int width, int height,
                        Point3 lower_left_corner, Vector3 horizontal, Vector3 vertical,
-                       Point3 origin) {
-    int x = threadIdx.x + blockIdx.x * blockDim.x;
-    int y = threadIdx.y + blockIdx.y * blockDim.y;
+                       Point3 origin, World **world) {
+    uint x = threadIdx.x + blockIdx.x * blockDim.x;
+    uint y = threadIdx.y + blockIdx.y * blockDim.y;
     if ((x >= width) || (y >= height)) {
         return;
     }
@@ -53,13 +59,28 @@ __global__ void render(Color *frame_buffer, int width, int height,
     float v = float(y) / float(height);
 
     Ray ray(origin, (lower_left_corner + u * horizontal + v * vertical).to_vector());
-    frame_buffer[y * width + x] = color(ray);
+    frame_buffer[y * width + x] = color(ray, world);
 }
 
 void writer_to_file(const string &file_name, int width, int height,
                     const Color *frame_buffer) {
     Image image(frame_buffer, width, height);
     image.writePNG(file_name);
+}
+
+__global__ void create_world(Shape **d_list, World **d_world) {
+    if (threadIdx.x == 0 && blockIdx.x == 0) {
+        *(d_list) = new Sphere(Point3(0, 0, -1), 0.5);
+        *(d_list + 1) = new Sphere(Point3(0, -100.5, -1), 100);
+        *d_world = new World(d_list, 2);
+    }
+}
+
+__global__ void free_world(World **d_world) {
+    for (int idx = 0; idx < (*d_world)->size; idx++) {
+        delete (*d_world)->list[idx];
+    }
+    delete *d_world;
 }
 
 int main() {
@@ -75,6 +96,14 @@ int main() {
     checkCudaErrors(
         cudaMallocManaged((void **)&frame_buffer, sizeof(Color) * width * height));
 
+    Shape **d_list;
+    checkCudaErrors(cudaMalloc((void **)&d_list, 2 * sizeof(Shape *)));
+    World **d_world;
+    checkCudaErrors(cudaMalloc((void **)&d_world, sizeof(World *)));
+    create_world<<<1, 1>>>(d_list, d_world);
+    checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaDeviceSynchronize());
+
     clock_t start = clock();
     // Render our buffer
     dim3 blocks(width / thread_width + 1, height / thread_height + 1, 1);
@@ -82,10 +111,16 @@ int main() {
 
     render<<<blocks, threads>>>(frame_buffer, width, height, Point3(-2.0, -1.0, -1.0),
                                 Vector3(4.0, 0.0, 0.0), Vector3(0.0, 2.0, 0.0),
-                                Point3(0.0, 0.0, 0.0));
+                                Point3(0.0, 0.0, 0.0), d_world);
 
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
+
+    checkCudaErrors(cudaDeviceSynchronize());
+    free_world<<<1, 1>>>(d_world);
+    checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaFree(d_list));
+    checkCudaErrors(cudaFree(d_world));
 
     double timer_seconds = ((double)(clock() - start)) / CLOCKS_PER_SEC;
     std::cerr << "took " << timer_seconds << " seconds.\n";
