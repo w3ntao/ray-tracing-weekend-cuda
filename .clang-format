@@ -4,5 +4,6 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 SortIncludes: false
 ColumnLimit: 90
+IndentAccessModifiers: true
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortBlocksOnASingleLine: Empty
