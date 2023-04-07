@@ -2,8 +2,7 @@
 #define CUDA_RAY_TRACER_POINT3_CUH
 
 #include <stdexcept>
-
-class Vector3;
+#include "vector3.cuh"
 
 class Point3 {
   public:
@@ -12,6 +11,10 @@ class Point3 {
     __host__ __device__ Point3() : x(0.0), y(0.0), z(0.0){};
 
     __host__ __device__ Point3(float _x, float _y, float _z) : x(_x), y(_y), z(_z){};
+
+    __host__ __device__ Point3 operator+(const Vector3 &v) const {
+        return Point3(x + v.x, y + v.y, z + v.z);
+    }
 
     __host__ __device__ float &operator[](int index) {
         if (index == 0) {

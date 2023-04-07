@@ -28,5 +28,5 @@ add_executable(${EXEC_PROGRAM}
         src/base/point3.cuh
         )
 
-target_include_directories(${EXEC_PROGRAM} PRIVATE "src/base")
+target_include_directories(${EXEC_PROGRAM} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(${EXEC_PROGRAM} PRIVATE ${PNG_LIBRARY})

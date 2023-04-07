@@ -27,6 +27,10 @@ class Vector3 {
         return Vector3(-x, -y, -z);
     }
 
+    __host__ __device__ Vector3 operator*(float factor) const {
+        return Vector3(x * factor, y * factor, z * factor);
+    }
+
     __host__ __device__ Vector3 operator/(float divisor) const {
         return Vector3(x / divisor, y / divisor, z / divisor);
     }
@@ -77,5 +81,8 @@ class Vector3 {
 #endif
     }
 };
+__host__ __device__ Vector3 operator*(float factor, const Vector3 &v) {
+    return v * factor;
+}
 
 #endif // CUDA_RAY_TRACER_VECTOR3_CUH
