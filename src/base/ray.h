@@ -2,11 +2,11 @@
 // Created by wentao on 4/6/23.
 //
 
-#ifndef CUDA_RAY_TRACER_RAY_CUH
-#define CUDA_RAY_TRACER_RAY_CUH
+#ifndef CUDA_RAY_TRACER_RAY_H
+#define CUDA_RAY_TRACER_RAY_H
 
-#include "base/point3.cuh"
-#include "base/vector3.cuh"
+#include "base/point3.h"
+#include "base/vector3.h"
 
 class Ray {
     public:
@@ -22,4 +22,4 @@ class Ray {
         }
 };
 
-#endif // CUDA_RAY_TRACER_RAY_CUH
+#endif // CUDA_RAY_TRACER_RAY_H

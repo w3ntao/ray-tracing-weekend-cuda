@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cfloat>
-#include "base/image.cuh"
+#include "base/image.h"
 #include "base/sphere.h"
 #include "base/world.h"
 

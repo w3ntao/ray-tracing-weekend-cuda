@@ -1,8 +1,8 @@
-#ifndef CUDA_RAY_TRACER_POINT3_CUH
-#define CUDA_RAY_TRACER_POINT3_CUH
+#ifndef CUDA_RAY_TRACER_POINT3_H
+#define CUDA_RAY_TRACER_POINT3_H
 
 #include <stdexcept>
-#include "vector3.cuh"
+#include "vector3.h"
 
 class Point3 {
     public:

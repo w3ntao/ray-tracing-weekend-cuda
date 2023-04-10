@@ -2,8 +2,8 @@
 // Created by wentao on 4/6/23.
 //
 
-#ifndef CUDA_RAY_TRACER_COLOR_CUH
-#define CUDA_RAY_TRACER_COLOR_CUH
+#ifndef CUDA_RAY_TRACER_COLOR_H
+#define CUDA_RAY_TRACER_COLOR_H
 
 class Color {
     public:
@@ -49,4 +49,4 @@ class Color {
         }
 };
 
-#endif // CUDA_RAY_TRACER_COLOR_CUH
+#endif // CUDA_RAY_TRACER_COLOR_H

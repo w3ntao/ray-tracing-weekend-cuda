@@ -2,8 +2,8 @@
 // Created by wentao on 4/6/23.
 //
 
-#ifndef CUDA_RAY_TRACER_VECTOR3_CUH
-#define CUDA_RAY_TRACER_VECTOR3_CUH
+#ifndef CUDA_RAY_TRACER_VECTOR3_H
+#define CUDA_RAY_TRACER_VECTOR3_H
 
 #include <stdexcept>
 
@@ -85,4 +85,4 @@ __host__ __device__ float dot(const Vector3 &left, const Vector3 &right) {
     return left.x * right.x + left.y * right.y + left.z * right.z;
 }
 
-#endif // CUDA_RAY_TRACER_VECTOR3_CUH
+#endif // CUDA_RAY_TRACER_VECTOR3_H

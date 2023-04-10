@@ -6,7 +6,7 @@
 #define CUDA_RAY_TRACER_SHAPE_H
 
 #include <optional>
-#include "base/ray.cuh"
+#include "base/ray.h"
 
 class Intersection {
     public:

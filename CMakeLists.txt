@@ -24,13 +24,13 @@ set(EXEC_PROGRAM "cudart")
 
 add_executable(${EXEC_PROGRAM}
         src/main.cu
-        src/base/color.cuh
+        src/base/color.h
         src/base/image.cu
-        src/base/image.cuh
+        src/base/image.h
         src/base/util.h
-        src/base/ray.cuh
-        src/base/vector3.cuh
-        src/base/point3.cuh
+        src/base/ray.h
+        src/base/vector3.h
+        src/base/point3.h
         src/base/shape.h
         src/base/sphere.h
         src/base/world.h

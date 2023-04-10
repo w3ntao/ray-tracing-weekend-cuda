@@ -2,13 +2,13 @@
 // Created by wentao on 4/6/23.
 //
 
-#ifndef CUDA_RAY_TRACER_IMAGE_CUH
-#define CUDA_RAY_TRACER_IMAGE_CUH
+#ifndef CUDA_RAY_TRACER_IMAGE_H
+#define CUDA_RAY_TRACER_IMAGE_H
 
 #include <vector>
 #include <string>
 #include "util.h"
-#include "color.cuh"
+#include "color.h"
 
 class Image {
     private:
@@ -58,4 +58,4 @@ class Image {
 
         void readPNG(const std::string &file_name);
 };
-#endif // CUDA_RAY_TRACER_IMAGE_CUH
+#endif // CUDA_RAY_TRACER_IMAGE_H
