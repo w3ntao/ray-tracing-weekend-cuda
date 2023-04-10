@@ -1,0 +1,46 @@
+name: cuda build
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+  schedule:
+    - cron: "0 0 * * 0"
+    # runs on 00:00 every Sunday (UTC)
+    # 00:00 UTC = 08:00 Beijing
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: jimver/cuda-toolkit@v0.2.10
+        id: cuda-toolkit
+        with:
+          cuda: '12.1.0'
+          method: 'network'
+          sub-packages: '[ "nvcc" ]'
+
+      - name: check NVCC
+        run:
+          printf "NVCC version:\n";
+          nvcc -V;
+          printf "\n\n";
+          printf "nvcc location:\n";
+          which nvcc;
+
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: build
+        run:
+          mkdir build; cd build;
+          cmake .. -DCMAKE_CUDA_COMPILER="$(which nvcc)";
+          make -j4;
