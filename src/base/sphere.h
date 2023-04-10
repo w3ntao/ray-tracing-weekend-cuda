@@ -16,8 +16,8 @@ class Sphere : public Shape {
         __device__ Sphere(const Point3 &_center, float _radius)
             : center(_center), radius(_radius) {}
 
-        __device__ virtual bool intersect(Intersection &intersection, const Ray &ray,
-                                          float t_min, float t_max) const {
+        __device__ virtual bool intersect(Intersection &intersection, const Ray &ray, float t_min,
+                                          float t_max) const {
             Vector3 oc = ray.o - center;
             float a = dot(ray.d, ray.d);
             float b = dot(oc, ray.d);

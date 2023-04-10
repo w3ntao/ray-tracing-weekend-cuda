@@ -17,8 +17,8 @@ class Intersection {
 
 class Shape {
     public:
-        __device__ virtual bool intersect(Intersection &intersection, const Ray &ray,
-                                          float t_min, float t_max) const = 0;
+        __device__ virtual bool intersect(Intersection &intersection, const Ray &ray, float t_min,
+                                          float t_max) const = 0;
 };
 
 #endif // CUDA_RAY_TRACER_SHAPE_H
