@@ -13,26 +13,20 @@ class Color {
 
         __host__ __device__ Color(float r, float g, float b) : r(r), g(g), b(b) {}
 
-        __device__ Color operator+(const Color &c) const {
-            return Color(r + c.r, g + c.g, b + c.b);
+        __host__ __device__ Color clamp() const {
+            return Color(single_clamp(r), single_clamp(g), single_clamp(b));
         }
 
-        __device__ void operator+=(const Color &c) {
+        __device__ inline void operator+=(const Color &c) {
             r += c.r;
             g += c.g;
             b += c.b;
         }
 
-        __device__ Color operator-(const Color &c) const {
-            return Color(r - c.r, g - c.g, b - c.b);
-        }
-
-        __device__ Color operator/(float divisor) const {
-            return Color(r / divisor, g / divisor, b / divisor);
-        }
-
-        __host__ __device__ Color clamp() const {
-            return Color(single_clamp(r), single_clamp(g), single_clamp(b));
+        __device__ inline void operator/=(float divisor) {
+            r /= divisor;
+            g /= divisor;
+            b /= divisor;
         }
 
     private:
@@ -40,6 +34,14 @@ class Color {
             return x < 0 ? 0 : (x > 1 ? 1 : x);
         }
 };
+
+__device__ inline Color operator+(const Color &left, const Color &right) {
+    return Color(left.r + right.r, left.g + right.g, left.b + right.b);
+}
+
+__device__ inline Color operator-(const Color &left, const Color &right) {
+    return Color(left.r - right.r, left.g - right.g, left.b - right.b);
+}
 
 __device__ inline Color operator*(const Color &left, const Color &right) {
     return Color(left.r * right.r, left.g * right.g, left.b * right.b);
@@ -53,10 +55,8 @@ __device__ inline Color operator*(float scalar, const Color &c) {
     return Color(c.r * scalar, c.g * scalar, c.b * scalar);
 }
 
-__device__ inline void operator/=(Color &c, float divisor) {
-    c.r /= divisor;
-    c.g /= divisor;
-    c.b /= divisor;
+__device__ inline Color operator/(const Color c, float divisor) {
+    return Color(c.r / divisor, c.g / divisor, c.b / divisor);
 }
 
 #endif // CUDA_RAY_TRACER_COLOR_H
