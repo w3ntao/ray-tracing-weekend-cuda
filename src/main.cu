@@ -24,8 +24,8 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
 }
 
 __global__ void create_world(Shape **gpu_shape_list, World **gpu_world, Camera **gpu_camera) {
-    *(gpu_shape_list + 0) = new Sphere(Point3(0, 0, -1), 0.5);
-    *(gpu_shape_list + 1) = new Sphere(Point3(0, -100.5, -1), 100);
+    *(gpu_shape_list + 0) = new Sphere(Point(0, 0, -1), 0.5);
+    *(gpu_shape_list + 1) = new Sphere(Point(0, -100.5, -1), 100);
     *gpu_world = new World(gpu_shape_list, 2);
     *gpu_camera = new Camera();
 }
@@ -55,7 +55,7 @@ __device__ Color color(const Ray &r, World **world, curandState *local_rand_stat
     for (int i = 0; i < 50; i++) {
         Intersection intersection;
         if ((*world)->intersect(intersection, cur_ray, 0.001f, FLT_MAX)) {
-            Point3 target =
+            Point target =
                 intersection.p + intersection.n + random_in_unit_sphere(local_rand_state);
             cur_attenuation *= 0.5f;
             cur_ray = Ray(intersection.p, target - intersection.p);

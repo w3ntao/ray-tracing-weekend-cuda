@@ -10,14 +10,14 @@
 
 class Ray {
     public:
-        Point3 o;
+        Point o;
         Vector3 d;
 
         __device__ Ray() {}
 
-        __device__ Ray(const Point3 _o, const Vector3 _d) : o(_o), d(_d) {}
+        __device__ Ray(const Point _o, const Vector3 _d) : o(_o), d(_d) {}
 
-        __device__ Point3 at(float t) const {
+        __device__ Point at(float t) const {
             return o + t * d;
         }
 };

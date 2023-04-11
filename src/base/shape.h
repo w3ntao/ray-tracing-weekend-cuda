@@ -11,7 +11,7 @@
 class Intersection {
     public:
         float t;
-        Point3 p;
+        Point p;
         Vector3 n;
 };
 

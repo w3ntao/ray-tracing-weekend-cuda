@@ -1,16 +1,16 @@
-#ifndef CUDA_RAY_TRACER_POINT3_H
-#define CUDA_RAY_TRACER_POINT3_H
+#ifndef CUDA_RAY_TRACER_POINT_H
+#define CUDA_RAY_TRACER_POINT_H
 
 #include <stdexcept>
 #include "vector3.h"
 
-class Point3 {
+class Point {
     public:
         float x, y, z;
 
-        __host__ __device__ Point3() : x(0.0), y(0.0), z(0.0){};
+        __host__ __device__ Point() : x(0.0), y(0.0), z(0.0){};
 
-        __host__ __device__ Point3(float _x, float _y, float _z) : x(_x), y(_y), z(_z){};
+        __host__ __device__ Point(float _x, float _y, float _z) : x(_x), y(_y), z(_z){};
 
         __host__ __device__ float &operator[](int index) {
             if (index == 0) {
@@ -51,20 +51,20 @@ class Point3 {
         }
 };
 
-__device__ inline Point3 operator+(const Point3 &p, const Vector3 &v) {
-    return Point3(p.x + v.x, p.y + v.y, p.z + v.z);
+__device__ inline Point operator+(const Point &p, const Vector3 &v) {
+    return Point(p.x + v.x, p.y + v.y, p.z + v.z);
 }
 
-__device__ inline Vector3 operator-(const Point3 &left, const Point3 &right) {
+__device__ inline Vector3 operator-(const Point &left, const Point &right) {
     return Vector3(left.x - right.x, left.y - right.y, left.z - right.z);
 }
 
-__device__ inline Point3 operator-(const Point3 &p, const Vector3 &v) {
-    return Point3(p.x - v.x, p.y - v.y, p.z - v.z);
+__device__ inline Point operator-(const Point &p, const Vector3 &v) {
+    return Point(p.x - v.x, p.y - v.y, p.z - v.z);
 }
 
-__device__ inline Vector3 operator-(const Vector3 &v, const Point3 &p) {
+__device__ inline Vector3 operator-(const Vector3 &v, const Point &p) {
     return Vector3(v.x - p.x, v.y - p.y, v.z - p.z);
 }
 
-#endif // CUDA_RAY_TRACER_VEC3_CUH
+#endif // CUDA_RAY_TRACER_POINT_H

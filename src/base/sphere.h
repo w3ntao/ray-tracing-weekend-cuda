@@ -9,12 +9,11 @@
 
 class Sphere : public Shape {
     private:
-        Point3 center;
+        Point center;
         float radius;
 
     public:
-        __device__ Sphere(const Point3 &_center, float _radius)
-            : center(_center), radius(_radius) {}
+        __device__ Sphere(const Point &_center, float _radius) : center(_center), radius(_radius) {}
 
         __device__ virtual bool intersect(Intersection &intersection, const Ray &ray, float t_min,
                                           float t_max) const {
