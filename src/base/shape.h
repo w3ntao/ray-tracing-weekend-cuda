@@ -5,14 +5,15 @@
 #ifndef CUDA_RAY_TRACER_SHAPE_H
 #define CUDA_RAY_TRACER_SHAPE_H
 
-#include <optional>
 #include "base/ray.h"
 
-class Intersection {
-    public:
+class Material;
+
+struct Intersection {
         float t;
         Point p;
         Vector3 n;
+        const Material *mat_ptr;
 };
 
 class Shape {

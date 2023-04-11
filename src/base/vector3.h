@@ -89,4 +89,10 @@ __host__ __device__ float dot(const Vector3 &left, const Vector3 &right) {
     return left.x * right.x + left.y * right.y + left.z * right.z;
 }
 
+__host__ __device__ inline Vector3 cross(const Vector3 &left, const Vector3 &right) {
+    return Vector3((left[1] * right[2] - left[2] * right[1]),
+                   (-(left[0] * right[2] - left[2] * right[0])),
+                   (left[0] * right[1] - left[1] * right[0]));
+}
+
 #endif // CUDA_RAY_TRACER_VECTOR3_H

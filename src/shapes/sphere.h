@@ -11,9 +11,11 @@ class Sphere : public Shape {
     private:
         Point center;
         float radius;
+        const Material *mat_ptr;
 
     public:
-        __device__ Sphere(const Point &_center, float _radius) : center(_center), radius(_radius) {}
+        __device__ Sphere(const Point &_center, float _radius, const Material *_material_ptr)
+            : center(_center), radius(_radius), mat_ptr(_material_ptr) {}
 
         __device__ virtual bool intersect(Intersection &intersection, const Ray &ray, float t_min,
                                           float t_max) const {
@@ -28,14 +30,16 @@ class Sphere : public Shape {
                     intersection.t = temp;
                     intersection.p = ray.at(intersection.t);
                     intersection.n = (intersection.p - center) / radius;
+                    intersection.mat_ptr = mat_ptr;
                     return true;
                 }
                 temp = (-b + sqrt(discriminant)) / a;
                 if (temp < t_max && temp > t_min) {
-                    Intersection rec;
-                    rec.t = temp;
-                    rec.p = ray.at(rec.t);
-                    rec.n = (rec.p - center) / radius;
+                    intersection.t = temp;
+                    intersection.p = ray.at(intersection.t);
+                    intersection.n = (intersection.p - center) / radius;
+                    intersection.mat_ptr = mat_ptr;
+
                     return true;
                 }
             }

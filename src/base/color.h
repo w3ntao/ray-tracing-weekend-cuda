@@ -23,6 +23,12 @@ class Color {
             b += c.b;
         }
 
+        __device__ inline void operator*=(const Color &c) {
+            r *= c.r;
+            g *= c.g;
+            b *= c.b;
+        }
+
         __device__ inline void operator/=(float divisor) {
             r /= divisor;
             g /= divisor;

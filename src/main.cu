@@ -6,6 +6,7 @@
 #include "shapes/sphere.h"
 #include "base/world.h"
 #include "base/camera.h"
+#include "base/material.h"
 
 using namespace std;
 
@@ -24,10 +25,54 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
 }
 
 __global__ void create_world(Shape **gpu_shape_list, World **gpu_world, Camera **gpu_camera) {
-    *(gpu_shape_list + 0) = new Sphere(Point(0, 0, -1), 0.5);
-    *(gpu_shape_list + 1) = new Sphere(Point(0, -100.5, -1), 100);
-    *gpu_world = new World(gpu_shape_list, 2);
-    *gpu_camera = new Camera();
+    printf("you shouldn't invoke this function\n");
+
+    /*
+     *(gpu_shape_list + 0) = new Sphere(Point(0, 0, -1), 0.5);
+     *(gpu_shape_list + 1) = new Sphere(Point(0, -100.5, -1), 100);
+     *gpu_world = new World(gpu_shape_list, 2);
+     *gpu_camera = new Camera();
+     * */
+}
+
+#define RND (curand_uniform(&local_rand_state))
+
+__global__ void create_world_new(Shape **d_list, World **d_world, Camera **d_camera, int nx, int ny,
+                                 curandState *rand_state) {
+    curandState local_rand_state = *rand_state;
+    d_list[0] = new Sphere(Point(0, -1000.0, -1), 1000, new lambertian(Color(0.5, 0.5, 0.5)));
+    int i = 1;
+    for (int a = -11; a < 11; a++) {
+        for (int b = -11; b < 11; b++) {
+            float choose_mat = RND;
+            Point center(a + RND, 0.2, b + RND);
+            if (choose_mat < 0.8f) {
+                d_list[i++] =
+                    new Sphere(center, 0.2, new lambertian(Color(RND * RND, RND * RND, RND * RND)));
+            } else if (choose_mat < 0.95f) {
+                d_list[i++] = new Sphere(
+                    center, 0.2,
+                    new metal(Color(0.5f * (1.0f + RND), 0.5f * (1.0f + RND), 0.5f * (1.0f + RND)),
+                              0.5f * RND));
+            } else {
+                d_list[i++] = new Sphere(center, 0.2, new dielectric(1.5));
+            }
+        }
+    }
+
+    d_list[i++] = new Sphere(Point(0, 1, 0), 1.0, new dielectric(1.5));
+    d_list[i++] = new Sphere(Point(-4, 1, 0), 1.0, new lambertian(Color(0.4, 0.2, 0.1)));
+    d_list[i++] = new Sphere(Point(4, 1, 0), 1.0, new metal(Color(0.7, 0.6, 0.5), 0.0));
+    *rand_state = local_rand_state;
+    *d_world = new World(d_list, 22 * 22 + 1 + 3);
+
+    Point lookfrom(13, 2, 3);
+    Point lookat(0, 0, 0);
+    float dist_to_focus = 10.0;
+    (lookfrom - lookat).length();
+    float aperture = 0.1;
+    *d_camera = new Camera(lookfrom, lookat, Vector3(0, 1, 0), 30.0, float(nx) / float(ny),
+                           aperture, dist_to_focus);
 }
 
 __global__ void free_world(World **gpu_world, Camera **gpu_camera) {
@@ -36,17 +81,6 @@ __global__ void free_world(World **gpu_world, Camera **gpu_camera) {
     }
     delete *gpu_world;
     delete *gpu_camera;
-}
-
-__device__ Vector3 random_in_unit_sphere(curandState *local_rand_state) {
-    Vector3 p;
-    do {
-        auto random_vector =
-            Vector3(curand_uniform(local_rand_state), curand_uniform(local_rand_state),
-                    curand_uniform(local_rand_state));
-        p = 2.0f * random_vector - Vector3(1, 1, 1);
-    } while (p.squared_length() >= 1.0f);
-    return p;
 }
 
 __device__ Color color(const Ray &r, World **world, curandState *local_rand_state) {
@@ -72,12 +106,42 @@ __device__ Color color(const Ray &r, World **world, curandState *local_rand_stat
     return Color(0.0, 0.0, 0.0); // exceeded recursion
 }
 
+__device__ Color color_new(const Ray &r, World **world, curandState *local_rand_state) {
+    Ray cur_ray = r;
+    Color cur_attenuation = Color(1.0, 1.0, 1.0);
+    for (int i = 0; i < 50; i++) {
+        Intersection rec;
+        if ((*world)->intersect(rec, cur_ray, 0.001f, FLT_MAX)) {
+            Ray scattered;
+            Color attenuation;
+
+            if (rec.mat_ptr->scatter(cur_ray, rec, attenuation, scattered, local_rand_state)) {
+                cur_attenuation *= attenuation;
+                cur_ray = scattered;
+            } else {
+                return Color(0.0, 0.0, 0.0);
+            }
+
+        } else {
+            Vector3 unit_direction = cur_ray.d.normalize();
+            float t = 0.5f * (unit_direction.y + 1.0f);
+            Vector3 c = (1.0f - t) * Vector3(1.0, 1.0, 1.0) + t * Vector3(0.5, 0.7, 1.0);
+            return cur_attenuation * Color(c.x, c.y, c.z);
+        }
+    }
+    return Color(0.0, 0.0, 0.0); // exceeded recursion
+}
+
+__global__ void rand_init(curandState *rand_state) {
+    curand_init(1984, 0, 0, rand_state);
+}
+
 __global__ void render_init(int width, int height, curandState *rand_state) {
-    int x = threadIdx.x + blockIdx.x * blockDim.x;
-    int y = threadIdx.y + blockIdx.y * blockDim.y;
+    uint x = threadIdx.x + blockIdx.x * blockDim.x;
+    uint y = threadIdx.y + blockIdx.y * blockDim.y;
     if ((x >= width) || (y >= height))
         return;
-    int pixel_index = y * width + x;
+    uint pixel_index = y * width + x;
     // Each thread gets same seed, a different sequence number, no offset
     curand_init(1984, pixel_index, 0, &rand_state[pixel_index]);
 }
@@ -89,6 +153,7 @@ __global__ void render(Color *frame_buffer, int width, int height, int num_sampl
     if ((x >= width) || (y >= height)) {
         return;
     }
+
     int pixel_index = y * width + x;
     curandState local_rand_state = rand_state[pixel_index];
 
@@ -96,8 +161,10 @@ __global__ void render(Color *frame_buffer, int width, int height, int num_sampl
     for (int s = 0; s < num_samples; s++) {
         float u = float(x + curand_uniform(&local_rand_state)) / float(width);
         float v = float(y + curand_uniform(&local_rand_state)) / float(height);
-        final_color += color((*camera)->get_ray(u, v), world, &local_rand_state);
+        final_color += color_new((*camera)->get_ray(u, v, &local_rand_state), world, &local_rand_state);
     }
+
+    // final_color = Color(0.2,0.3,0.8);
 
     rand_state[pixel_index] = local_rand_state;
     final_color /= float(num_samples);
@@ -117,27 +184,37 @@ int main() {
     int height = 800;
     int thread_width = 8;
     int thread_height = 8;
-    int num_samples = 100;
+    int num_samples = 10;
 
     std::cerr << "Rendering a " << width << "x" << height
               << " image (samples per pixel: " << num_samples << ") ";
     std::cerr << "in " << thread_width << "x" << thread_height << " blocks.\n";
 
-    // allocate random state
-    curandState *gpu_rand_state;
-    checkCudaErrors(cudaMalloc((void **)&gpu_rand_state, width * height * sizeof(curandState)));
-
     // allocate FB
     Color *frame_buffer;
     checkCudaErrors(cudaMallocManaged((void **)&frame_buffer, sizeof(Color) * width * height));
 
+    // allocate random state
+    curandState *gpu_rand_state;
+    checkCudaErrors(cudaMalloc((void **)&gpu_rand_state, width * height * sizeof(curandState)));
+
+    curandState *gpu_rand_create_world;
+    checkCudaErrors(cudaMalloc((void **)&gpu_rand_create_world, sizeof(curandState)));
+
+    rand_init<<<1, 1>>>(gpu_rand_create_world);
+    checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaDeviceSynchronize());
+
     Shape **gpu_shape_list;
-    checkCudaErrors(cudaMalloc((void **)&gpu_shape_list, 2 * sizeof(Shape *)));
+    uint num_sphere = 22 * 22 + 1 + 3;
+    checkCudaErrors(cudaMalloc((void **)&gpu_shape_list, num_sphere * sizeof(Shape *)));
     World **gpu_world;
     checkCudaErrors(cudaMalloc((void **)&gpu_world, sizeof(World *)));
     Camera **gpu_camera;
     checkCudaErrors(cudaMalloc((void **)&gpu_camera, sizeof(Camera *)));
-    create_world<<<1, 1>>>(gpu_shape_list, gpu_world, gpu_camera);
+
+    create_world_new<<<1, 1>>>(gpu_shape_list, gpu_world, gpu_camera, width, height,
+                               gpu_rand_create_world);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 

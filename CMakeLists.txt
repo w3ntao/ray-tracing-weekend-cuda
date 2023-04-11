@@ -24,17 +24,18 @@ set(EXEC_PROGRAM "cudart")
 
 add_executable(${EXEC_PROGRAM}
         src/main.cu
+        src/base/util.h
+        src/base/vector3.h
+        src/base/point3.h
+        src/base/ray.h
         src/base/color.h
         src/base/image.cu
         src/base/image.h
-        src/base/util.h
-        src/base/ray.h
-        src/base/vector3.h
-        src/base/point3.h
         src/base/shape.h
         src/shapes/sphere.h
         src/base/world.h
-        src/base/camera.h)
+        src/base/camera.h
+        src/base/material.h)
 
 target_include_directories(${EXEC_PROGRAM} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(${EXEC_PROGRAM} PRIVATE ${PNG_LIBRARY})
