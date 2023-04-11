@@ -40,6 +40,20 @@ class Image {
             return *this;
         }
 
+        void flip() {
+            std::vector<Color> flipped_pixels = std::vector<Color>(width * height);
+
+            for (uint x = 0; x < width; ++x) {
+                for (uint y = 0; y < height; ++y) {
+                    uint pixel_index = y * width + x;
+                    uint flipped_index = (height - 1 - y) * width + x;
+
+                    flipped_pixels[flipped_index] = pixels[pixel_index];
+                }
+            }
+            pixels = flipped_pixels;
+        }
+
         void create(uint _width, uint _height) {
             width = _width;
             height = _height;

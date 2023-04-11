@@ -34,7 +34,7 @@ add_executable(${EXEC_PROGRAM}
         src/base/shape.h
         src/base/sphere.h
         src/base/world.h
-        )
+        src/base/camera.h)
 
 target_include_directories(${EXEC_PROGRAM} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(${EXEC_PROGRAM} PRIVATE ${PNG_LIBRARY})

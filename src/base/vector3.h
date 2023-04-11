@@ -35,8 +35,12 @@ class Vector3 {
             return Vector3(x / divisor, y / divisor, z / divisor);
         }
 
-        __host__ __device__ float length() const {
-            return std::sqrt(x * x + y * y + z * z);
+        __host__ __device__ inline float squared_length() const {
+            return x * x + y * y + z * z;
+        }
+
+        __host__ __device__ inline float length() const {
+            return std::sqrt(squared_length());
         }
 
         __host__ __device__ Vector3 normalize() const {
