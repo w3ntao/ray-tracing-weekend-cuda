@@ -32,7 +32,7 @@ add_executable(${EXEC_PROGRAM}
         src/base/vector3.h
         src/base/point3.h
         src/base/shape.h
-        src/base/sphere.h
+        src/shapes/sphere.h
         src/base/world.h
         src/base/camera.h)
 

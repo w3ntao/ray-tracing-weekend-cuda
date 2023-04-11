@@ -3,7 +3,7 @@
 #include <cfloat>
 #include <curand_kernel.h>
 #include "base/image.h"
-#include "base/sphere.h"
+#include "shapes/sphere.h"
 #include "base/world.h"
 #include "base/camera.h"
 

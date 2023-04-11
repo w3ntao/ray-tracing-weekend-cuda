@@ -15,7 +15,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-and-test:
+  cuda-build:
 
     runs-on: ubuntu-latest
 
@@ -42,6 +42,7 @@ jobs:
       - name: build
         run:
           exit 0;
+          
           mkdir build; cd build;
           cmake .. -DCMAKE_CUDA_COMPILER="$(which nvcc)";
           make -j4;
