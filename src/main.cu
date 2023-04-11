@@ -23,19 +23,19 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
     }
 }
 
-__global__ void create_world(Shape **d_list, World **d_world, Camera **d_camera) {
-    *(d_list + 0) = new Sphere(Point3(0, 0, -1), 0.5);
-    *(d_list + 1) = new Sphere(Point3(0, -100.5, -1), 100);
-    *d_world = new World(d_list, 2);
-    *d_camera = new Camera();
+__global__ void create_world(Shape **gpu_shape_list, World **gpu_world, Camera **gpu_camera) {
+    *(gpu_shape_list + 0) = new Sphere(Point3(0, 0, -1), 0.5);
+    *(gpu_shape_list + 1) = new Sphere(Point3(0, -100.5, -1), 100);
+    *gpu_world = new World(gpu_shape_list, 2);
+    *gpu_camera = new Camera();
 }
 
-__global__ void free_world(World **d_world, Camera **d_camera) {
-    for (int idx = 0; idx < (*d_world)->size; idx++) {
-        delete (*d_world)->list[idx];
+__global__ void free_world(World **gpu_world, Camera **gpu_camera) {
+    for (int idx = 0; idx < (*gpu_world)->size; idx++) {
+        delete (*gpu_world)->list[idx];
     }
-    delete *d_world;
-    delete *d_camera;
+    delete *gpu_world;
+    delete *gpu_camera;
 }
 
 __device__ Vector3 random_in_unit_sphere(curandState *local_rand_state) {
@@ -124,20 +124,20 @@ int main() {
     std::cerr << "in " << thread_width << "x" << thread_height << " blocks.\n";
 
     // allocate random state
-    curandState *d_rand_state;
-    checkCudaErrors(cudaMalloc((void **)&d_rand_state, width * height * sizeof(curandState)));
+    curandState *gpu_rand_state;
+    checkCudaErrors(cudaMalloc((void **)&gpu_rand_state, width * height * sizeof(curandState)));
 
     // allocate FB
     Color *frame_buffer;
     checkCudaErrors(cudaMallocManaged((void **)&frame_buffer, sizeof(Color) * width * height));
 
-    Shape **d_list;
-    checkCudaErrors(cudaMalloc((void **)&d_list, 2 * sizeof(Shape *)));
-    World **d_world;
-    checkCudaErrors(cudaMalloc((void **)&d_world, sizeof(World *)));
-    Camera **d_camera;
-    checkCudaErrors(cudaMalloc((void **)&d_camera, sizeof(Camera *)));
-    create_world<<<1, 1>>>(d_list, d_world, d_camera);
+    Shape **gpu_shape_list;
+    checkCudaErrors(cudaMalloc((void **)&gpu_shape_list, 2 * sizeof(Shape *)));
+    World **gpu_world;
+    checkCudaErrors(cudaMalloc((void **)&gpu_world, sizeof(World *)));
+    Camera **gpu_camera;
+    checkCudaErrors(cudaMalloc((void **)&gpu_camera, sizeof(Camera *)));
+    create_world<<<1, 1>>>(gpu_shape_list, gpu_world, gpu_camera);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
@@ -146,12 +146,12 @@ int main() {
     dim3 blocks(width / thread_width + 1, height / thread_height + 1, 1);
     dim3 threads(thread_width, thread_height, 1);
 
-    render_init<<<blocks, threads>>>(width, height, d_rand_state);
+    render_init<<<blocks, threads>>>(width, height, gpu_rand_state);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
-    render<<<blocks, threads>>>(frame_buffer, width, height, num_samples, d_camera, d_world,
-                                d_rand_state);
+    render<<<blocks, threads>>>(frame_buffer, width, height, num_samples, gpu_camera, gpu_world,
+                                gpu_rand_state);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
@@ -161,12 +161,12 @@ int main() {
     string file_name = "output.png";
     writer_to_file(file_name, width, height, frame_buffer);
 
-    free_world<<<1, 1>>>(d_world, d_camera);
+    free_world<<<1, 1>>>(gpu_world, gpu_camera);
     checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaFree(d_list));
-    checkCudaErrors(cudaFree(d_world));
-    checkCudaErrors(cudaFree(d_camera));
-    checkCudaErrors(cudaFree(d_rand_state));
+    checkCudaErrors(cudaFree(gpu_shape_list));
+    checkCudaErrors(cudaFree(gpu_world));
+    checkCudaErrors(cudaFree(gpu_camera));
+    checkCudaErrors(cudaFree(gpu_rand_state));
     checkCudaErrors(cudaFree(frame_buffer));
 
     cout << "image saved to `" << file_name << "`\n";
