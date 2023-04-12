@@ -77,6 +77,7 @@ __global__ void create_world_new(Shape **d_list, World **d_world, Camera **d_cam
 
 __global__ void free_world(World **gpu_world, Camera **gpu_camera) {
     for (int idx = 0; idx < (*gpu_world)->size; idx++) {
+        delete (*gpu_world)->list[idx]->get_material_ptr();
         delete (*gpu_world)->list[idx];
     }
     delete *gpu_world;
@@ -180,11 +181,11 @@ void writer_to_file(const string &file_name, int width, int height, const Color 
 }
 
 int main() {
-    int width = 1600;
-    int height = 800;
+    int width = 800;
+    int height = 400;
     int thread_width = 8;
     int thread_height = 8;
-    int num_samples = 10;
+    int num_samples = 1;
 
     std::cerr << "Rendering a " << width << "x" << height
               << " image (samples per pixel: " << num_samples << ") ";
@@ -244,7 +245,9 @@ int main() {
     checkCudaErrors(cudaFree(gpu_world));
     checkCudaErrors(cudaFree(gpu_camera));
     checkCudaErrors(cudaFree(gpu_rand_state));
+    checkCudaErrors(cudaFree(gpu_rand_create_world));
     checkCudaErrors(cudaFree(frame_buffer));
+    cudaDeviceReset();
 
     cout << "image saved to `" << file_name << "`\n";
 

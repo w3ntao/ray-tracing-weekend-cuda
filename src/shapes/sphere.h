@@ -45,6 +45,10 @@ class Sphere : public Shape {
             }
             return false;
         }
+
+        __device__ virtual const Material *get_material_ptr() const {
+            return mat_ptr;
+        }
 };
 
 #endif // CUDA_RAY_TRACER_SPHERE_H
