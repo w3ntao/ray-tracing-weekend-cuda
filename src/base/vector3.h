@@ -48,20 +48,24 @@ class Vector3 {
         }
 
         __host__ __device__ float &operator[](int index) {
-            if (index == 0) {
+            switch (index) {
+            case 0: {
                 return x;
             }
-            if (index == 1) {
+            case 1: {
                 return y;
             }
-            if (index == 2) {
+            case 2: {
                 return z;
             }
+            default: {
 #if defined(__CUDA_ARCH__)
-            asm("trap;");
+                asm("trap;");
 #else
-            throw std::runtime_error("Vector3: invalid index `" + std::to_string(index) + "`");
+                throw std::runtime_error("Vector3: invalid index `" + std::to_string(index) + "`");
 #endif
+            }
+            }
         }
 
         __host__ __device__ float operator[](int index) const {
@@ -90,8 +94,7 @@ __host__ __device__ float dot(const Vector3 &left, const Vector3 &right) {
 }
 
 __host__ __device__ inline Vector3 cross(const Vector3 &left, const Vector3 &right) {
-    return Vector3((left[1] * right[2] - left[2] * right[1]),
-                   (-(left[0] * right[2] - left[2] * right[0])),
+    return Vector3((left[1] * right[2] - left[2] * right[1]), (-(left[0] * right[2] - left[2] * right[0])),
                    (left[0] * right[1] - left[1] * right[0]));
 }
 

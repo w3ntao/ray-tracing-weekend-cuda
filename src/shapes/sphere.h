@@ -11,43 +11,45 @@ class Sphere : public Shape {
     private:
         Point center;
         float radius;
-        const Material *mat_ptr;
+        const Material *material_ptr;
 
     public:
         __device__ Sphere(const Point &_center, float _radius, const Material *_material_ptr)
-            : center(_center), radius(_radius), mat_ptr(_material_ptr) {}
+            : center(_center), radius(_radius), material_ptr(_material_ptr) {}
 
-        __device__ virtual bool intersect(Intersection &intersection, const Ray &ray, float t_min,
-                                          float t_max) const {
+        __device__ bool intersect(Intersection &intersection, const Ray &ray, float t_min,
+                                  float t_max) const override {
             Vector3 oc = ray.o - center;
             float a = dot(ray.d, ray.d);
             float b = dot(oc, ray.d);
             float c = dot(oc, oc) - radius * radius;
             float discriminant = b * b - a * c;
-            if (discriminant > 0) {
-                float temp = (-b - sqrt(discriminant)) / a;
-                if (temp < t_max && temp > t_min) {
-                    intersection.t = temp;
-                    intersection.p = ray.at(intersection.t);
-                    intersection.n = (intersection.p - center) / radius;
-                    intersection.mat_ptr = mat_ptr;
-                    return true;
-                }
-                temp = (-b + sqrt(discriminant)) / a;
-                if (temp < t_max && temp > t_min) {
-                    intersection.t = temp;
-                    intersection.p = ray.at(intersection.t);
-                    intersection.n = (intersection.p - center) / radius;
-                    intersection.mat_ptr = mat_ptr;
 
-                    return true;
-                }
+            if (discriminant < 0.0) {
+                return false;
             }
-            return false;
+
+            float temp = (-b - sqrt(discriminant)) / a;
+            if (temp < t_max && temp > t_min) {
+                intersection.t = temp;
+                intersection.p = ray.at(intersection.t);
+                intersection.n = (intersection.p - center) / radius;
+                intersection.material_ptr = material_ptr;
+                return true;
+            }
+            
+            temp = (-b + sqrt(discriminant)) / a;
+            if (temp < t_max && temp > t_min) {
+                intersection.t = temp;
+                intersection.p = ray.at(intersection.t);
+                intersection.n = (intersection.p - center) / radius;
+                intersection.material_ptr = material_ptr;
+                return true;
+            }
         }
 
-        __device__ virtual const Material *get_material_ptr() const {
-            return mat_ptr;
+        __device__ const Material *get_material_ptr() const override {
+            return material_ptr;
         }
 };
 

@@ -13,37 +13,45 @@ class Point {
         __host__ __device__ Point(float _x, float _y, float _z) : x(_x), y(_y), z(_z){};
 
         __host__ __device__ float &operator[](int index) {
-            if (index == 0) {
+            switch (index) {
+            case 0: {
                 return x;
             }
-            if (index == 1) {
+            case 1: {
                 return y;
             }
-            if (index == 2) {
+            case 2: {
                 return z;
             }
+            default: {
 #if defined(__CUDA_ARCH__)
-            asm("trap;");
+                asm("trap;");
 #else
-            throw std::runtime_error("Point3: invalid index `" + std::to_string(index) + "`");
+                throw std::runtime_error("Point: invalid index `" + std::to_string(index) + "`");
 #endif
+            }
+            }
         }
 
         __host__ __device__ float operator[](int index) const {
-            if (index == 0) {
+            switch (index) {
+            case 0: {
                 return x;
             }
-            if (index == 1) {
+            case 1: {
                 return y;
             }
-            if (index == 2) {
+            case 2: {
                 return z;
             }
+            default: {
 #if defined(__CUDA_ARCH__)
-            asm("trap;");
+                asm("trap;");
 #else
-            throw std::runtime_error("Point3: invalid index `" + std::to_string(index) + "`");
+                throw std::runtime_error("Point: invalid index `" + std::to_string(index) + "`");
 #endif
+            }
+            }
         }
 
         __device__ inline Vector3 to_vector() const {

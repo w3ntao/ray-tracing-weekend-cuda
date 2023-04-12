@@ -26,7 +26,7 @@ add_executable(${EXEC_PROGRAM}
         src/main.cu
         src/base/util.h
         src/base/vector3.h
-        src/base/point3.h
+        src/base/point.h
         src/base/ray.h
         src/base/color.h
         src/base/image.cu

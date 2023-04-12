@@ -7,15 +7,15 @@
 
 #include "base/shape.h"
 
-class World  {
+class World {
     public:
         Shape **list;
         int size;
-        
+
         __device__ World(Shape **_list, int n) : list(_list), size(n) {}
 
         __device__ bool intersect(Intersection &intersection, const Ray &ray, float t_min,
-                                          float t_max) const {
+                                  float t_max) const {
             bool intersected = false;
             float closest_so_far = t_max;
             Intersection temp_intersection;

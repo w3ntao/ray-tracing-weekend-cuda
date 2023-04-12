@@ -14,7 +14,7 @@ class Color {
         __host__ __device__ Color(float r, float g, float b) : r(r), g(g), b(b) {}
 
         __host__ __device__ Color clamp() const {
-            return Color(single_clamp(r), single_clamp(g), single_clamp(b));
+            return Color(gpu_between_0_1(r), gpu_between_0_1(g), gpu_between_0_1(b));
         }
 
         __device__ inline void operator+=(const Color &c) {
@@ -33,11 +33,6 @@ class Color {
             r /= divisor;
             g /= divisor;
             b /= divisor;
-        }
-
-    private:
-        __host__ __device__ inline float single_clamp(float x) const {
-            return x < 0 ? 0 : (x > 1 ? 1 : x);
         }
 };
 

@@ -13,7 +13,7 @@ struct Intersection {
         float t;
         Point p;
         Vector3 n;
-        const Material *mat_ptr;
+        const Material *material_ptr;
 };
 
 class Shape {

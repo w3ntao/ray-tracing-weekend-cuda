@@ -7,7 +7,7 @@
 
 #include "base/ray.h"
 #include "base/util.h"
-#include <math.h>
+#include <cmath>
 
 __device__ Vector3 random_in_unit_disk(curandState *local_rand_state) {
     Vector3 p;
@@ -20,36 +20,27 @@ __device__ Vector3 random_in_unit_disk(curandState *local_rand_state) {
 
 class Camera {
     public:
-        __device__ Camera() {
-            lower_left_corner = Point(-2.0, -1.0, -1.0);
-            horizontal = Vector3(4.0, 0.0, 0.0);
-            vertical = Vector3(0.0, 2.0, 0.0);
-            origin = Point(0.0, 0.0, 0.0);
-            lens_radius = 0.0;
-        }
-
-        __device__ Camera(Point lookfrom, Point lookat, Vector3 vup, float vfov, float aspect,
+        __device__ Camera(Point look_from, Point look_at, Vector3 up, float vfov, float aspect,
                           float aperture, float focus_dist) {
             auto PI = acos(-1.0);
             lens_radius = aperture / 2.0f;
             float theta = vfov * PI / 180.0f;
             float half_height = tan(theta / 2.0f);
             float half_width = aspect * half_height;
-            origin = lookfrom;
-            w = (lookfrom - lookat).normalize();
-            u = cross(vup, w).normalize();
+            origin = look_from;
+            w = (look_from - look_at).normalize();
+            u = cross(up, w).normalize();
             v = cross(w, u);
-            lower_left_corner = origin - half_width * focus_dist * u -
-                                half_height * focus_dist * v - focus_dist * w;
+            lower_left_corner =
+                origin - half_width * focus_dist * u - half_height * focus_dist * v - focus_dist * w;
             horizontal = 2.0f * half_width * focus_dist * u;
             vertical = 2.0f * half_height * focus_dist * v;
         }
 
-        __device__ Ray get_ray(float s, float t, curandState *local_rand_state) {
+        __device__ Ray get_ray(float s, float t, curandState *local_rand_state) const {
             Vector3 rd = lens_radius * random_in_unit_disk(local_rand_state);
             Vector3 offset = u * rd.x + v * rd.y;
-            return Ray(origin + offset,
-                       lower_left_corner + s * horizontal + t * vertical - origin - offset);
+            return Ray(origin + offset, lower_left_corner + s * horizontal + t * vertical - origin - offset);
         }
 
         Point origin;

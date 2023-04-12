@@ -22,8 +22,7 @@ class Image {
             pixels = std::vector<Color>(_width * _height);
         }
 
-        Image(const Color *frame_buffer, uint _width, uint _height)
-            : width(_width), height(_height) {
+        Image(const Color *frame_buffer, uint _width, uint _height) : width(_width), height(_height) {
             pixels = std::vector<Color>(_width * _height);
             for (uint x = 0; x < width; ++x) {
                 for (uint y = 0; y < height; ++y) {

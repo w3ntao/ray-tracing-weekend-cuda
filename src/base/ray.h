@@ -5,7 +5,7 @@
 #ifndef CUDA_RAY_TRACER_RAY_H
 #define CUDA_RAY_TRACER_RAY_H
 
-#include "base/point3.h"
+#include "base/point.h"
 #include "base/vector3.h"
 
 class Ray {
