@@ -72,7 +72,7 @@ __global__ void free_world(World **gpu_world, PerspectiveCamera **gpu_camera) {
     delete *gpu_camera;
 }
 
-__device__ Color ray_trace(const Ray &ray, World **world, curandState *local_rand_state) {
+__device__ Color ray_trace(const Ray &ray, const World *const *world, curandState *local_rand_state) {
     Ray current_ray = ray;
     Color current_attenuation = Color(1.0, 1.0, 1.0);
     for (int i = 0; i < 50; i++) {
@@ -113,7 +113,8 @@ __global__ void render_init(uint width, uint height, curandState *rand_state) {
 }
 
 __global__ void render(Color *frame_buffer, uint width, uint height, uint num_samples,
-                       PerspectiveCamera **camera, World **world, curandState *rand_state) {
+                       const PerspectiveCamera *const *camera, const World *const *world,
+                       curandState *rand_state) {
     uint x = threadIdx.x + blockIdx.x * blockDim.x;
     uint y = threadIdx.y + blockIdx.y * blockDim.y;
     if ((x >= width) || (y >= height)) {
@@ -121,16 +122,15 @@ __global__ void render(Color *frame_buffer, uint width, uint height, uint num_sa
     }
 
     int pixel_index = y * width + x;
-    curandState local_rand_state = rand_state[pixel_index];
+    curandState *local_rand_state = &(rand_state[pixel_index]);
 
     Color final_color(0, 0, 0);
     for (uint s = 0; s < num_samples; s++) {
-        float u = float(x + curand_uniform(&local_rand_state)) / float(width);
-        float v = float(y + curand_uniform(&local_rand_state)) / float(height);
-        final_color += ray_trace((*camera)->get_ray(u, v, &local_rand_state), world, &local_rand_state);
+        float u = float(x + curand_uniform(local_rand_state)) / float(width);
+        float v = float(y + curand_uniform(local_rand_state)) / float(height);
+        final_color += ray_trace((*camera)->get_ray(u, v, local_rand_state), world, local_rand_state);
     }
 
-    rand_state[pixel_index] = local_rand_state;
     final_color /= float(num_samples);
 
     final_color = Color(sqrt(final_color.r), sqrt(final_color.g), sqrt(final_color.b));
