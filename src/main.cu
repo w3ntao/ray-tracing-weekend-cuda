@@ -2,11 +2,12 @@
 #include <string>
 #include <cfloat>
 #include <curand_kernel.h>
-#include "base/image.h"
-#include "shapes/sphere.h"
+#include "util/image.h"
 #include "base/world.h"
-#include "base/camera.h"
 #include "base/material.h"
+#include "base/integrator.h"
+#include "cameras/perspective_camera.h"
+#include "shapes/sphere.h"
 
 using namespace std;
 
@@ -25,8 +26,8 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
 
 #define RND (curand_uniform(&local_rand_state))
 
-__global__ void create_world(Shape **gpu_shape_list, World **gpu_world, Camera **gpu_camera, uint width,
-                             uint height, curandState *rand_state) {
+__global__ void create_world(Shape **gpu_shape_list, World **gpu_world, PerspectiveCamera **gpu_camera,
+                             uint width, uint height, curandState *rand_state) {
     curandState local_rand_state = *rand_state;
     gpu_shape_list[0] = new Sphere(Point(0, -1000.0, -1), 1000, new Lambertian(Color(0.5, 0.5, 0.5)));
     int i = 1;
@@ -58,11 +59,11 @@ __global__ void create_world(Shape **gpu_shape_list, World **gpu_world, Camera *
     Point look_at(0, 0, 0);
     float dist_to_focus = (look_from - look_at).length();
     float aperture = 0.1;
-    *gpu_camera = new Camera(look_from, look_at, Vector3(0, 1, 0), 30.0, float(width) / float(height),
-                             aperture, dist_to_focus);
+    *gpu_camera = new PerspectiveCamera(look_from, look_at, Vector3(0, 1, 0), 30.0,
+                                        float(width) / float(height), aperture, dist_to_focus);
 }
 
-__global__ void free_world(World **gpu_world, Camera **gpu_camera) {
+__global__ void free_world(World **gpu_world, PerspectiveCamera **gpu_camera) {
     for (int idx = 0; idx < (*gpu_world)->size; idx++) {
         delete (*gpu_world)->list[idx]->get_material_ptr();
         delete (*gpu_world)->list[idx];
@@ -111,8 +112,8 @@ __global__ void render_init(uint width, uint height, curandState *rand_state) {
     curand_init(1984, pixel_index, 0, &rand_state[pixel_index]);
 }
 
-__global__ void render(Color *frame_buffer, uint width, uint height, uint num_samples, Camera **camera,
-                       World **world, curandState *rand_state) {
+__global__ void render(Color *frame_buffer, uint width, uint height, uint num_samples,
+                       PerspectiveCamera **camera, World **world, curandState *rand_state) {
     uint x = threadIdx.x + blockIdx.x * blockDim.x;
     uint y = threadIdx.y + blockIdx.y * blockDim.y;
     if ((x >= width) || (y >= height)) {
@@ -147,7 +148,7 @@ int main() {
     uint height = 1080;
     uint thread_width = 8;
     uint thread_height = 8;
-    uint num_samples = 100;
+    uint num_samples = 20;
 
     cerr << "Rendering a " << width << "x" << height << " image (samples per pixel: " << num_samples << ") ";
     cerr << "in " << thread_width << "x" << thread_height << " blocks.\n";
@@ -172,8 +173,8 @@ int main() {
     checkCudaErrors(cudaMalloc((void **)&gpu_shape_list, num_sphere * sizeof(Shape *)));
     World **gpu_world;
     checkCudaErrors(cudaMalloc((void **)&gpu_world, sizeof(World *)));
-    Camera **gpu_camera;
-    checkCudaErrors(cudaMalloc((void **)&gpu_camera, sizeof(Camera *)));
+    PerspectiveCamera **gpu_camera;
+    checkCudaErrors(cudaMalloc((void **)&gpu_camera, sizeof(PerspectiveCamera *)));
 
     create_world<<<1, 1>>>(gpu_shape_list, gpu_world, gpu_camera, width, height, gpu_rand_create_world);
     checkCudaErrors(cudaGetLastError());

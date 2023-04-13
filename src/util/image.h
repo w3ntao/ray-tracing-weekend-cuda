@@ -7,8 +7,8 @@
 
 #include <vector>
 #include <string>
-#include "util.h"
-#include "color.h"
+#include "constants.h"
+#include "base/color.h"
 
 class Image {
     private:

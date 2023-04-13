@@ -69,20 +69,24 @@ class Vector3 {
         }
 
         __host__ __device__ float operator[](int index) const {
-            if (index == 0) {
+            switch (index) {
+            case 0: {
                 return x;
             }
-            if (index == 1) {
+            case 1: {
                 return y;
             }
-            if (index == 2) {
+            case 2: {
                 return z;
             }
+            default: {
 #if defined(__CUDA_ARCH__)
-            asm("trap;");
+                asm("trap;");
 #else
-            throw std::runtime_error("Vector3: invalid index `" + std::to_string(index) + "`");
+                throw std::runtime_error("Vector3: invalid index `" + std::to_string(index) + "`");
 #endif
+            }
+            }
         }
 };
 __host__ __device__ Vector3 operator*(float factor, const Vector3 &v) {
