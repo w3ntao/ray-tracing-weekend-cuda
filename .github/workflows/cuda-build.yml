@@ -41,8 +41,9 @@ jobs:
 
       - name: build
         run:
-          exit 0;
-          
           mkdir build; cd build;
           cmake .. -DCMAKE_CUDA_COMPILER="$(which nvcc)";
+
+          exit 0;
+
           make -j4;

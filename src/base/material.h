@@ -68,7 +68,7 @@ class Lambertian : public Material {
 
 class Metal : public Material {
     public:
-        __device__ Metal(const Color &a, float f) : albedo(a), fuzz(gpu_between_0_1(f)) {}
+        __device__ Metal(const Color &a, float f) : albedo(a), fuzz(gpu_clamp_0_1(f)) {}
 
         __device__ bool scatter(const Ray &r_in, const Intersection &intersection, Color &attenuation,
                                 Ray &scattered, curandState *local_rand_state) const override {
