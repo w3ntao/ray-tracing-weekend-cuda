@@ -14,6 +14,8 @@ class Sphere : public Shape {
         const Material *material_ptr;
 
     public:
+        ~Sphere() override = default;
+
         __device__ Sphere(const Point &_center, float _radius, const Material *_material_ptr)
             : center(_center), radius(_radius), material_ptr(_material_ptr) {}
 
@@ -37,7 +39,7 @@ class Sphere : public Shape {
                 intersection.material_ptr = material_ptr;
                 return true;
             }
-            
+
             temp = (-b + sqrt(discriminant)) / a;
             if (temp < t_max && temp > t_min) {
                 intersection.t = temp;

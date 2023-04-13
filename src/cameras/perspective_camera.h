@@ -18,6 +18,8 @@ __device__ Vector3 random_in_unit_disk(curandState *local_rand_state) {
 
 class PerspectiveCamera : public Camera {
     public:
+        ~PerspectiveCamera() override = default;
+
         __device__ PerspectiveCamera(Point look_from, Point look_at, Vector3 up, float vfov, float aspect,
                                      float aperture, float focus_dist) {
             auto PI = acos(-1.0);

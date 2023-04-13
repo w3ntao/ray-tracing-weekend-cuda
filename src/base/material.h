@@ -48,12 +48,16 @@ __device__ Vector3 reflect(const Vector3 &v, const Vector3 &n) {
 
 class Material {
     public:
+        __device__ virtual ~Material() {}
+
         __device__ virtual bool scatter(const Ray &r_in, const Intersection &intersection, Color &attenuation,
                                         Ray &scattered, curandState *local_rand_state) const = 0;
 };
 
 class Lambertian : public Material {
     public:
+        ~Lambertian() override = default;
+
         __device__ explicit Lambertian(const Color &a) : albedo(a) {}
         __device__ bool scatter(const Ray &r_in, const Intersection &intersection, Color &attenuation,
                                 Ray &scattered, curandState *local_rand_state) const override {
@@ -68,6 +72,8 @@ class Lambertian : public Material {
 
 class Metal : public Material {
     public:
+        ~Metal() override = default;
+
         __device__ Metal(const Color &a, float f) : albedo(a), fuzz(gpu_clamp_0_1(f)) {}
 
         __device__ bool scatter(const Ray &r_in, const Intersection &intersection, Color &attenuation,
@@ -83,7 +89,10 @@ class Metal : public Material {
 
 class Dielectric : public Material {
     public:
+        ~Dielectric() override = default;
+
         __device__ explicit Dielectric(float ri) : ref_idx(ri) {}
+
         __device__ bool scatter(const Ray &r_in, const Intersection &intersection, Color &attenuation,
                                 Ray &scattered, curandState *local_rand_state) const override {
             Vector3 outward_normal;

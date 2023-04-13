@@ -18,6 +18,8 @@ struct Intersection {
 
 class Shape {
     public:
+        __device__ virtual ~Shape() {}
+
         __device__ virtual bool intersect(Intersection &intersection, const Ray &ray, float t_min,
                                           float t_max) const = 0;
 

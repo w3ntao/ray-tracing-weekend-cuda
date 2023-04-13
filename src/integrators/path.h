@@ -10,7 +10,9 @@
 
 class PathIntegrator : public Integrator {
     public:
-        PathIntegrator() = default;
+        __device__ PathIntegrator() = default;
+
+        ~PathIntegrator() override = default;
 
         __device__ Color get_radiance(const Ray &ray, const World *const *world,
                                       curandState *local_rand_state) const override {
