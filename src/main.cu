@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <cfloat>
 #include <curand_kernel.h>
 #include "util/image.h"
 #include "base/world.h"
@@ -8,6 +7,7 @@
 #include "base/integrator.h"
 #include "cameras/perspective_camera.h"
 #include "shapes/sphere.h"
+#include "integrators/path.h"
 
 using namespace std;
 
@@ -24,10 +24,14 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
     }
 }
 
+__global__ void create_path_integrator(Integrator **gpu_integrator) {
+    *gpu_integrator = new PathIntegrator();
+}
+
 #define RND (curand_uniform(&local_rand_state))
 
-__global__ void create_world(Shape **gpu_shape_list, World **gpu_world, PerspectiveCamera **gpu_camera,
-                             uint width, uint height, curandState *rand_state) {
+__global__ void create_world(Shape **gpu_shape_list, World **gpu_world, Camera **gpu_camera, uint width,
+                             uint height, curandState *rand_state) {
     curandState local_rand_state = *rand_state;
     gpu_shape_list[0] = new Sphere(Point(0, -1000.0, -1), 1000, new Lambertian(Color(0.5, 0.5, 0.5)));
     int i = 1;
@@ -63,39 +67,14 @@ __global__ void create_world(Shape **gpu_shape_list, World **gpu_world, Perspect
                                         float(width) / float(height), aperture, dist_to_focus);
 }
 
-__global__ void free_world(World **gpu_world, PerspectiveCamera **gpu_camera) {
+__global__ void free_world(Integrator **gpu_integrator, World **gpu_world, Camera **gpu_camera) {
     for (int idx = 0; idx < (*gpu_world)->size; idx++) {
         delete (*gpu_world)->list[idx]->get_material_ptr();
         delete (*gpu_world)->list[idx];
     }
     delete *gpu_world;
+    delete *gpu_integrator;
     delete *gpu_camera;
-}
-
-__device__ Color ray_trace(const Ray &ray, const World *const *world, curandState *local_rand_state) {
-    Ray current_ray = ray;
-    Color current_attenuation = Color(1.0, 1.0, 1.0);
-    for (int i = 0; i < 50; i++) {
-        Intersection intersection;
-        if ((*world)->intersect(intersection, current_ray, 0.001f, FLT_MAX)) {
-            Ray scattered_ray;
-            Color attenuation;
-            if (!intersection.material_ptr->scatter(current_ray, intersection, attenuation, scattered_ray,
-                                                    local_rand_state)) {
-                return Color(0.0, 0.0, 0.0);
-            }
-
-            current_attenuation *= attenuation;
-            current_ray = scattered_ray;
-            continue;
-        }
-
-        float t = 0.5f * (current_ray.d.normalize().y + 1.0f);
-        Vector3 c = (1.0f - t) * Vector3(1.0, 1.0, 1.0) + t * Vector3(0.5, 0.7, 1.0);
-        return current_attenuation * Color(c.x, c.y, c.z);
-    }
-
-    return Color(0.0, 0.0, 0.0); // exceeded recursion
 }
 
 __global__ void rand_init(curandState *rand_state) {
@@ -113,8 +92,8 @@ __global__ void render_init(uint width, uint height, curandState *rand_state) {
 }
 
 __global__ void render(Color *frame_buffer, uint width, uint height, uint num_samples,
-                       const PerspectiveCamera *const *camera, const World *const *world,
-                       curandState *rand_state) {
+                       const Integrator *const *integrator, const Camera *const *camera,
+                       const World *const *world, curandState *rand_state) {
     uint x = threadIdx.x + blockIdx.x * blockDim.x;
     uint y = threadIdx.y + blockIdx.y * blockDim.y;
     if ((x >= width) || (y >= height)) {
@@ -128,7 +107,8 @@ __global__ void render(Color *frame_buffer, uint width, uint height, uint num_sa
     for (uint s = 0; s < num_samples; s++) {
         float u = float(x + curand_uniform(local_rand_state)) / float(width);
         float v = float(y + curand_uniform(local_rand_state)) / float(height);
-        final_color += ray_trace((*camera)->get_ray(u, v, local_rand_state), world, local_rand_state);
+        final_color +=
+            (*integrator)->get_radiance((*camera)->get_ray(u, v, local_rand_state), world, local_rand_state);
     }
 
     final_color /= float(num_samples);
@@ -146,9 +126,14 @@ void writer_to_file(const string &file_name, uint width, uint height, const Colo
 int main() {
     uint width = 1960;
     uint height = 1080;
+
+    float ratio = 1.0;
+    width = uint(width * ratio);
+    height = uint(height * ratio);
+
     uint thread_width = 8;
     uint thread_height = 8;
-    uint num_samples = 20;
+    uint num_samples = 1;
 
     cerr << "Rendering a " << width << "x" << height << " image (samples per pixel: " << num_samples << ") ";
     cerr << "in " << thread_width << "x" << thread_height << " blocks.\n";
@@ -173,8 +158,12 @@ int main() {
     checkCudaErrors(cudaMalloc((void **)&gpu_shape_list, num_sphere * sizeof(Shape *)));
     World **gpu_world;
     checkCudaErrors(cudaMalloc((void **)&gpu_world, sizeof(World *)));
-    PerspectiveCamera **gpu_camera;
-    checkCudaErrors(cudaMalloc((void **)&gpu_camera, sizeof(PerspectiveCamera *)));
+    Camera **gpu_camera;
+    checkCudaErrors(cudaMalloc((void **)&gpu_camera, sizeof(Camera *)));
+
+    Integrator **gpu_integrator;
+    checkCudaErrors(cudaMalloc((void **)&gpu_integrator, sizeof(Integrator *)));
+    create_path_integrator<<<1, 1>>>(gpu_integrator);
 
     create_world<<<1, 1>>>(gpu_shape_list, gpu_world, gpu_camera, width, height, gpu_rand_create_world);
     checkCudaErrors(cudaGetLastError());
@@ -188,8 +177,8 @@ int main() {
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
-    render<<<blocks, threads>>>(frame_buffer, width, height, num_samples, gpu_camera, gpu_world,
-                                gpu_rand_state);
+    render<<<blocks, threads>>>(frame_buffer, width, height, num_samples, gpu_integrator, gpu_camera,
+                                gpu_world, gpu_rand_state);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
@@ -199,10 +188,11 @@ int main() {
     string file_name = "output.png";
     writer_to_file(file_name, width, height, frame_buffer);
 
-    free_world<<<1, 1>>>(gpu_world, gpu_camera);
+    free_world<<<1, 1>>>(gpu_integrator, gpu_world, gpu_camera);
     checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaFree(gpu_shape_list));
+    checkCudaErrors(cudaFree(gpu_integrator));
     checkCudaErrors(cudaFree(gpu_world));
+    checkCudaErrors(cudaFree(gpu_shape_list));
     checkCudaErrors(cudaFree(gpu_camera));
     checkCudaErrors(cudaFree(gpu_rand_state));
     checkCudaErrors(cudaFree(gpu_rand_create_world));

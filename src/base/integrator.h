@@ -9,8 +9,8 @@
 
 class Integrator {
     public:
-        __device__ virtual Color get_radiance(const Ray &ray, World **world,
-                                              curandState *local_rand_state) = 0;
+        __device__ virtual Color get_radiance(const Ray &ray, const World *const *world,
+                                              curandState *local_rand_state) const = 0;
 };
 
 #endif // CUDA_RAY_TRACER_INTEGRATOR_H
