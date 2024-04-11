@@ -8,7 +8,7 @@ endif ()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(cuda_ray_tracer LANGUAGES CUDA CXX)
+project(ray-tracing-weekend LANGUAGES CUDA CXX)
 
 find_package(PNG QUIET)
 if (PNG_FOUND)
@@ -24,21 +24,8 @@ set(EXEC_PROGRAM "cudart")
 
 add_executable(${EXEC_PROGRAM}
         src/main.cu
-        src/util/constants.h
-        src/base/vector3.h
-        src/base/point.h
-        src/base/ray.h
-        src/base/color.h
         src/util/image.cu
-        src/util/image.h
-        src/base/shape.h
-        src/shapes/sphere.h
-        src/base/world.h
-        src/base/camera.h
-        src/base/material.h
-        src/cameras/perspective_camera.h
-        src/base/integrator.h
-        src/integrators/path.h)
+)
 
 target_include_directories(${EXEC_PROGRAM} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(${EXEC_PROGRAM} PRIVATE ${PNG_LIBRARY})
